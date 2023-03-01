@@ -1,0 +1,32 @@
+\begin{thebibliography}{1}
+
+\bibitem{Asraf}
+Omar Ashraf and Christopher Kim.
+\newblock {\em CPSC 490 Project Proposal: Computational Intelligence for
+  Settlers of Catan}.
+\newblock PhD thesis, 2018.
+
+\bibitem{Cowling}
+Peter~I. Cowling, Edward~J. Powley, and Daniel Whitehouse.
+\newblock Information set monte carlo tree search.
+\newblock {\em IEEE Transactions on Computational Intelligentce and AI in
+  Games}, 4(2), June 2012.
+
+\bibitem{Guhe}
+Markus Guhe and Alex Lascarides.
+\newblock Game strategies for the settlers of catan.
+\newblock {\em 2014 IEEE Conference on Computational Intelligence and Games},
+  2014.
+
+\bibitem{Pfeiffer}
+Michael Pfeiffer.
+\newblock Reinforcement learning of strategies for settlers of catan.
+\newblock {\em International Conference on Computer Games: Artificial
+  Intelligence, Design and Education 2004}, 2004.
+
+\bibitem{Szita}
+Istvan Szita, Guillaume Chaslot, and Pieter Spronck.
+\newblock Monte-carlo tree search in settlers of catan.
+\newblock {\em Advances in Computer Games}, 2009.
+
+\end{thebibliography}
