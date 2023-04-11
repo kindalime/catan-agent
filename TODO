@@ -1,5 +1,9 @@
 * delineate classes + add descriptions
 * visual component
+* baseline implementation
+* normal mcts test
+
+DFS with all endpoint roads? (roads with <2 connecting roads)
 
 BUGS:
 * dev cards can be used the turn they are played

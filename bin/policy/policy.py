@@ -9,6 +9,7 @@ class CatanPolicy(metaclass=ABCMeta):
 
     @abstractmethod
     def choose_discard(self, pos, player):
+        # Return the resources to discard
         pass
 
     @abstractmethod

@@ -25,3 +25,9 @@ look into meta-actions
 3:15 next friday
 
 ----------------------------------------------
+
+* ask about random agent setup
+* ask about longest road algorithm
+
+states need to capture enough information on who's got an advantage
+do normal mcts and capture all info in states, see how big i can get the tree to grow

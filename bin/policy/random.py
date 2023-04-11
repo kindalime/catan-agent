@@ -98,7 +98,7 @@ class RandomPolicy(CatanPolicy):
         
         # possible choices: settlements, cities, roads, dev cards, chosen in random order
         # this algorithm does AT MOST one settlement, one city, two roads, two dev cards a turn
-        options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD, Option.DEV, Option.DEV ]
+        options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD, Option.DEV, Option.DEV]
         option_dict = {
             Option.SETTLEMENT: self.option_settlement,
             Option.CITY: self.option_city,
