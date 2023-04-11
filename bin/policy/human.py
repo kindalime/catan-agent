@@ -1,6 +1,6 @@
-from ..resources import *
-from ..devcard import *
-from policy import CatanPolicy
+from resources import *
+from devcard import *
+from policy.policy import CatanPolicy
 from abc import ABCMeta, abstractmethod
 
 resource_dict = {

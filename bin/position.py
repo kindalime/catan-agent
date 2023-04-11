@@ -4,7 +4,7 @@ class Position:
         self.players = players
         self.dev_deck = dev_deck
         self.robber = robber
-        self.current_turn = turn
+        self.current_turn = current_turn
         self.turn_count = turn_count
 
         self.largest_army = 2

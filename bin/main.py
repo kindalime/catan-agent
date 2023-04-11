@@ -1,3 +1,4 @@
 from catan import Catan
 
-catan.play_game()
+game = Catan(3)
+game.play_game()

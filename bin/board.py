@@ -1,7 +1,7 @@
 import random
 from utils import *
 from collections import defaultdict
-from resource import Resource
+from resources import Resource
 from errors import BuildError, UpgradeError, TooCloseError
 
 """ Notes on this file's design:
@@ -16,8 +16,8 @@ from errors import BuildError, UpgradeError, TooCloseError
 class Road:
     curr_id = 0
     def __init__(self):
-        self.id = curr_id
-        curr_id += 1
+        self.id = Road.curr_id
+        Road.curr_id += 1
         self.owner = -1 # nobody owns this
         self.colonies = []
     
@@ -50,11 +50,11 @@ class Road:
 class Colony:
     curr_id = 0
     def __init__(self):
-        self.id = curr_id
-        curr_id += 1
+        self.id = Colony.curr_id
+        Colony.curr_id += 1
         self.owner = -1
-        self.roads = None
-        self.hexes = None
+        self.roads = []
+        self.hexes = []
         self.city = False
     
     def add_roads(self, *roads):
@@ -107,8 +107,8 @@ class Colony:
 class Hex:
     curr_id = 0
     def __init__(self, resource, number):
-        self.id = curr_id
-        curr_id += 1
+        self.id = Hex.curr_id
+        Hex.curr_id += 1
         self.resource = resource
         self.number = number
         self.colonies = []
@@ -150,12 +150,12 @@ class Board:
         col.add_hexes(*hexes)
         hexes = [self.hexes[h] for h in hexes]
         for h in hexes:
-            h.add_colonies(col.id)
+            h.add_colonies([col.id])
 
     def create_road(self, *colonies):
         road = Road()
         self.roads.append(road)
-        road.add_colonies(*colonies)
+        road.add_colonies(colonies)
         colonies = [self.colonies[c] for c in colonies]
         for c in colonies:
             c.add_roads(road.id)
@@ -214,20 +214,22 @@ class Board:
 
         # Outer Ring to Inner Ring
         j = 2
-        for i in range(30, 48, 3):
-            self.create_road(j, i)
-            self.create_road(j+2, i+2)
+        for i in range(30, 45, 3):
+            self.create_road(j, i+1)
+            self.create_road(j+2, i+3)
             j += 5
+        self.create_road(29, 30)
+        self.create_road(27, 46)
 
         # Inner Ring
         for i in range(30, 47):
             self.create_road(i, i+1)
-        self.create_road(j)
+        self.create_road(30, 47)
 
         # Inner Ring to Middle Tile
         j = 31
         for i in range(48, 54):
-            self.create_road(i, j)
+            self.create_road(i, j+1)
             j += 3
 
         # Middle Tile

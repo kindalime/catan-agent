@@ -16,19 +16,24 @@ class Catan:
     def __init__(self, player_num):
         self.player_num = player_num
         self.first_player = random.randint(0, player_num-1)
-        self.display = Display
+        self.display = None
         self.policies = self.policy_setup()
 
     def policy_setup(self):
-        return [HumanPolicy(), HumanPolicy(), HumanPolicy()]
+        players = [Player(0), Player(1), Player(2)]
+        return [
+            HumanPolicy(self, players[0]),
+            HumanPolicy(self, players[0]),
+            HumanPolicy(self, players[0]),
+        ]
 
-    def play_game(self, pos):
-        self.begin_game()
+    def play_game(self):
+        pos = self.begin_game()
         while not pos.is_terminal():
             pos = self.play_turn()
 
     def init_pos(self):
-        players = [Player(num) for num in range(player_num)]
+        players = [Player(num) for num in range(self.player_num)]
         board = Board()
         dev_deck = DevelopmentDeck()
         robber = Robber()
@@ -38,7 +43,8 @@ class Catan:
 
     def begin_game(self):
         # initial settlement playing
-        pos = init_pos()
+        pos = self.init_pos()
+        self.display = Display(pos.board)
         for i in range(self.player_num):
             pos = self.policies[(self.first_player + i) % self.player_num].init_settle(pos)
 
@@ -152,7 +158,7 @@ class Catan:
         player.roads.append(id)
         player.points += 1
 
-        self.display.draw_road(id, player.color)``
+        self.display.draw_road(id, player.color)
 
     def build_settlement(self, pos, player, id):
         player.resource_check(settlement_cost)

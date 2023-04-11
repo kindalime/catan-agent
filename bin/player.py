@@ -1,6 +1,6 @@
 from resources import *
 from errors import *
-from dev_card import empty_deck, play_card
+from devcard import empty_deck, play_card
 from utils import player_colors
 
 class Player:
