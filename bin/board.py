@@ -40,8 +40,8 @@ class Road:
 
     def initial_build(self, pos, player_id, settlement):
         # road must be next to the initial settlement and unowned
-        if id not in self.pos.get_colony(settlement).roads:
-            raise NotConnectedError(id, self.id)
+        if road_id not in pos.get_colony(settlement).roads:
+            raise NotConnectedError(road_id, self.id)
 
     def build(self, player, pos):
         self.check_validity()

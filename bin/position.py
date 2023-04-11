@@ -47,8 +47,5 @@ class Position:
     def get_player(self, id):
         return self.players[id]
 
-    def move_robber(self, player_id, victim_id, location):
-        self.robber.move_robber(player_id, victim_id, self.get_hex(location))
-
     def get_robber(self):
         return self.robber.location

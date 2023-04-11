@@ -44,30 +44,30 @@ class DevelopmentDeck:
 
 ### All dev cards accept a pos and a player (NOT player_id)
 
-def vp_card(self, pos, player, **kwargs):
+def vp_card(catan, pos, player, **kwargs):
     player.points += 1
 
-def road_card(self, pos, player, **kwargs):
+def road_card(catan, pos, player, **kwargs):
     pos.get_road(kwargs[first]).build(player)
     if second is not None:
         pos.get_road(kwargs[second]).build(player)    
 
-def knight_card(self, pos, player, **kwargs):
-    pos.move_robber(kwargs[location], kwargs[victim])
+def knight_card(catan, pos, player, **kwargs):
+    catan.move_robber(kwargs[location], kwargs[victim])
     player.army += 1
     pos.army_calc = True
 
-def plenty_card(self, pos, player, **kwargs):
+def plenty_card(catan, pos, player, **kwargs):
     player[kwargs[first]] += 1
     player[kwargs[second]] += 1
 
-def monopoly_card(self, pos, player, **kwargs):
+def monopoly_card(catan, pos, player, **kwargs):
     for player in pos.players:
         if player.id != player:
             player.resources[kwargs[res]] += player.resources[kwargs[res]]
             player.resources[kwargs[res]] == 0
 
-def play_card(pos, player, card, **kwargs):
+def play_card(catan, pos, player, card, **kwargs):
     cards = {
         DevCard.KNIGHT: knight_card,
         DevCard.VP: vp_card,
@@ -75,4 +75,4 @@ def play_card(pos, player, card, **kwargs):
         DevCard.MONOPOLY: monopoly_card,
         DevCard.ROAD: road_card,
     }
-    cards[card](pos, player, **kwargs)
+    cards[card](catan, pos, player, **kwargs)

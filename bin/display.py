@@ -103,8 +103,8 @@ class Display:
             delta_x = col2[0] - col1[0]
             delta_y = col2[1] - col1[1]
             
-            new_col1 = [col1[0] + .2*delta_x, col1[1] + .2*delta_y]
-            new_col2 = [col2[0] - .2*delta_x, col1[1] - .2*delta_y]
+            new_col1 = [col1[0] + .25*delta_x, col1[1] + .25*delta_y]
+            new_col2 = [col2[0] - .25*delta_x, col1[1] - .25*delta_y]
             return new_col1, new_col2
 
         roads = {}
@@ -123,12 +123,12 @@ class Display:
 
     def draw_colony(self, col_id, color):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 10)
+        pygame.draw.circle(self.window, color, coords, 15)
         pygame.display.update()
 
     def draw_city(self, col_id, color):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 10)
+        pygame.draw.circle(self.window, color, coords, 20)
         pygame.display.update()
 
     def draw_road(self, road_id, color):
