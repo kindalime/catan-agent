@@ -60,10 +60,17 @@ class Player:
         # filter and return all empty roads
         return [road.id for road in pos.get_roads(roads) if road.owner == -1]
 
+    def update_dice(self, pos, colony):
+        for h in colony.hexes:
+            h = pos.get_hex(h)
+            if h.resource != Resource.DESERT:
+                self.dice[h.number][h.resource] += 1
+
     def collect_resources(self, pos, die):
+        self.print_dice()
         print(f"Player {self.id} collects resources: {self.dice[die]}")
         self.resources.update(self.dice[die])
-        robber_resources = pos.robber.get_resources()
+        robber_resources = pos.robber.get_resources(pos)
         if self.id in robber_resources:
             self.resources.subtract(robber_resources[self.id])
             print(f"Robber takes: {robber_resources[self.id]}")
@@ -86,3 +93,7 @@ class Player:
         # settlements block if owned by someone else, but not if they're unowned
         # TODO: ask prof. glenn about this!
         pass
+
+    def print_dice(self):
+        for number in self.dice:
+            print(number, self.dice[number])

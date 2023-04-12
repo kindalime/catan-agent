@@ -7,4 +7,4 @@ class Robber:
         self.location = 18 # starts in the desert
 
     def get_resources(self, pos):
-        return pos.get_hex(self.location).get_resources()
+        return pos.get_hex(self.location).get_resources(pos)

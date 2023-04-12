@@ -1,6 +1,7 @@
 import random
 from utils import *
 from enum import Enum
+from collections import Counter
 
 class DevCard:
     NONE = 0
@@ -11,13 +12,13 @@ class DevCard:
     MONOPOLY = 5
 
 def empty_deck():
-    return {
+    return Counter({
         DevCard.KNIGHT: 0,
         DevCard.VP: 0,
         DevCard.PLENTY: 0,
         DevCard.MONOPOLY: 0,
         DevCard.ROAD: 0,
-    }
+    })
 
 
 class DevelopmentDeck:

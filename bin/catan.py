@@ -10,27 +10,31 @@ from position import Position
 from display import Display
 
 from policy.human import HumanPolicy
+from policy.random import RandomPolicy
 
 
 class Catan:
     def __init__(self, player_num):
         self.player_num = player_num
+        self.players = [Player(i) for i in range(self.player_num)]
         self.first_player = random.randint(0, player_num-1)
         self.display = None
         self.policies = self.policy_setup()
 
     def policy_setup(self):
-        players = [Player(0), Player(1), Player(2)]
         return [
-            HumanPolicy(self, players[0]),
-            HumanPolicy(self, players[0]),
-            HumanPolicy(self, players[0]),
+            RandomPolicy(self, self.players[0]),
+            RandomPolicy(self, self.players[1]),
+            RandomPolicy(self, self.players[2]),
         ]
 
     def play_game(self):
         pos = self.begin_game()
-        while not pos.is_terminal():
-            pos = self.play_turn()
+        while True:
+            pos = self.play_turn(pos)
+            if pos.terminal:
+                return pos.winner
+            # sleep(1)
 
     def init_pos(self):
         players = [Player(num) for num in range(self.player_num)]
@@ -42,29 +46,39 @@ class Catan:
         return Position(board, players, dev_deck, robber, current_turn, turn_count)
 
     def begin_game(self):
-        # initial settlement playing
+        # initial settlement/road placing
         pos = self.init_pos()
         self.display = Display(pos.board)
         for i in range(self.player_num):
-            pos = self.policies[(self.first_player + i) % self.player_num].init_settle(pos)
+            curr_player = (self.first_player + i) % self.player_num
+            col = self.policies[curr_player].init_settle(pos)
+            self.build_init_settlement(pos, self.players[curr_player], col)
+
+            road = self.policies[curr_player].init_road(pos, col)
+            self.build_init_road(pos, self.players[curr_player], road, col)
 
         for i in range(self.player_num-1, -1, -1):
-            pos = self.policies[(self.first_player + i) % self.player_num].init_settle(pos)
+            curr_player = (self.first_player + i) % self.player_num
+            col = self.policies[curr_player].init_settle(pos)
+            self.build_init_settlement(pos, self.players[curr_player], col)
+
+            road = self.policies[curr_player].init_road(pos, col)
+            self.build_init_road(pos, self.players[curr_player], road, col)
         return pos
 
     def play_turn(self, pos):
-        pos = copy(pos)
+        pos = copy.copy(pos)
 
         dice = random.randint(1, 6) + random.randint(1, 6) # roll the dice
         print(f"Dice roll: {dice}")
         if dice != 7: # gather resources as usual
             for player in pos.players:
-                player.collect_resources(dice)
+                player.collect_resources(pos, dice)
         else: # robber attack!
             self.robber_attack(pos)
 
         # ask policy what it wants to do for a specific player
-        pos = self.policies[pos.current_turn].take_turn(pos, pos.get_player(pos.current_turn))
+        pos = self.policies[pos.current_turn].take_turn(pos)
 
         self.end_of_turn(pos)
         return pos
@@ -81,6 +95,9 @@ class Catan:
         pos.army_calc = False
         pos.road_reset = False
         pos.road_calc = False
+
+        # check if the current player has won
+        pos.check_terminal()
 
         # increment turns
         pos.current_turn = (pos.current_turn + 1) % self.player_num
@@ -134,16 +151,17 @@ class Catan:
                     pos.players[pos.longest_road_owner] += 2
 
     def build_init_settlement(self, pos, player, id):
-        pos.get_settlement(id).initial_build(player.id, pos)
+        pos.get_colony(id).initial_build(pos, player.id)
         player.colonies.append(id)
         player.points += 1
+        player.update_dice(pos, pos.get_colony(id))
         
         # collect resources, but only on the second settle
         if len(player.colonies) == 2:
             for resource in pos.get_colony(id).get_resources(pos):
                 player.resources[resource] += 1 
 
-        self.display.draw_settlement(id, player.color)
+        self.display.draw_colony(id, player.color)
 
     def build_road(self, pos, player, id):
         player.resource_check(road_cost)
@@ -154,7 +172,7 @@ class Catan:
         self.display.draw_road(id, player.color)
 
     def build_init_road(self, pos, player, id, settlement):
-        pos.get_road(id).initial_build(player.id, pos, settlement)
+        pos.get_road(id).initial_build(pos, player.id, settlement, id)
         player.roads.append(id)
         player.points += 1
 
@@ -168,8 +186,8 @@ class Catan:
         colony = pos.get_colony(id)
         colony.build(player.id)
         player.colonies.append(id)
+        player.update_dice(pos, colony)
 
-        player.resources.update(colony.get_resources())
         player.resources.subtract(settlement_cost)
         player.settlement_supply -= 1
         player.points += 1
@@ -190,7 +208,8 @@ class Catan:
 
         colony = pos.get_colony(id)
         colony.upgrade(player.id)
-        player.resources.update(colony.get_resources())
+        player.update_dice(pos, colony)
+
         player.resources.subtract(city_cost)
         player.settlement_supply += 1
         player.city_supply -= 1

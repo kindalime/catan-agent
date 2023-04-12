@@ -17,6 +17,9 @@ class Position:
         self.road_calc = False
         self.road_reset = False
 
+        self.terminal = False
+        self.winner = None
+
     def check_terminal(board):
         for player in self.players:
             if player.points >= 10:
@@ -49,3 +52,8 @@ class Position:
 
     def get_robber(self):
         return self.robber.location
+
+    def check_terminal(self):
+        if self.current_turn.points >= 10:
+            self.terminal = True
+            self.winner = self.current_turn

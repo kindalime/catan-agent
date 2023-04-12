@@ -38,7 +38,7 @@ class Road:
         if not connect:
             raise BrokenRoadError(self.id, player_id)
 
-    def initial_build(self, pos, player_id, settlement):
+    def initial_build(self, pos, player_id, settlement, road_id):
         # road must be next to the initial settlement and unowned
         if road_id not in pos.get_colony(settlement).roads:
             raise NotConnectedError(road_id, self.id)
@@ -66,7 +66,7 @@ class Colony:
     def check_proximity(self, pos):
         for road in pos.get_roads(self.roads):
             for col in pos.get_colonies(road.colonies):
-                if pos.get_colony(col).owner != -1 and col.id != self.id:
+                if col.owner != -1 and col.id != self.id:
                     return False
         return True
 
@@ -89,7 +89,7 @@ class Colony:
             raise UpgradeError(self.id, player_id)
 
     def initial_build(self, pos, player_id):
-        if not self.check_proximity(id):
+        if not self.check_proximity(pos):
             raise TooCloseError(id, player_id)
         self.owner = player_id
 
@@ -102,7 +102,7 @@ class Colony:
         self.city = True
 
     def get_resources(self, pos):
-        resources = [pos.get_hex(h).resource for h in self.hexes if pos.get_hex(h).resource() != Resource.DESERT]
+        return [pos.get_hex(h).resource for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT]
 
 class Hex:
     curr_id = 0

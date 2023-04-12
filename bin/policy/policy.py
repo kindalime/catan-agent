@@ -12,6 +12,10 @@ class CatanPolicy(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def init_road(self, pos, settlement):
+        pass
+
+    @abstractmethod
     def choose_discard(self, pos):
         # Return the resources to discard
         pass

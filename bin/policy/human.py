@@ -27,11 +27,16 @@ class HumanPolicy(CatanPolicy):
             print("Error: invalid resource input!")
 
     def init_settle(self, pos):
-        print(f"For player {self.player}, place a settlement.")
+        print(f"For player {self.player.id}, place a settlement.")
+        print(f"Possible initial settlements: {self.player.possible_init_settlements(pos)}")
         settlement = self.input_num()
-        print(f"For player {self.player}, place a road.")
+        return settlement
+
+    def init_road(self, pos, settlement):
+        print(f"For player {self.player.id}, place a road.")
+        print(f"Possible initial roads: {self.player.possible_init_roads(pos, settlement)}")
         road = self.input_num()
-        return settlement, road
+        return road
 
     def choose_discard(self, pos):
         print(f"Discard {self.player.resources // 2} resources. (wo, br, sh, wh, st)")

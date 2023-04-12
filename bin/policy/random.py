@@ -1,9 +1,10 @@
 import random
 from enum import Enum
-from policy import CatanPolicy
+
 from utils import *
 from resources import *
-from dev_card import DevCard
+from policy.policy import CatanPolicy
+from devcard import *
 
 class Option(Enum):
     SETTLEMENT = 0
@@ -18,11 +19,13 @@ class RandomPolicy(CatanPolicy):
             spot = random.randrange(54)
             if pos.get_colony(spot).owner == -1 and pos.get_colony(spot).check_proximity(pos):
                 break
+        return spot
 
+    def init_road(self, pos, settlement):
         # Find any possible road connected to that spot
-        roads = pos.get_colony(spot).roads
+        roads = pos.get_colony(settlement).roads
         roads = [r for r in pos.get_roads(roads) if r.owner == -1]
-        return spot, random.choice(roads)
+        return random.choice(roads).id
 
     def choose_discard(self, pos):
         resources = counter_to_list(self.player.resources)
@@ -90,10 +93,10 @@ class RandomPolicy(CatanPolicy):
 
     def take_turn(self, pos):
         # for each dev card: 33% chance to play every turn
-        dev_cards = counter_to_list(self.player.dev_cards)
+        dev_cards = counter_to_list(list(self.player.dev_cards.items()))
         random.shuffle(dev_cards)
         for card in dev_cards:
-            if random.random < 1/3:
+            if random.random < 2/3:
                 self.play_dev_card(pos, self.player, card)
         
         # possible choices: settlements, cities, roads, dev cards, chosen in random order
