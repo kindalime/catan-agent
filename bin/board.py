@@ -2,7 +2,7 @@ import random
 from utils import *
 from collections import defaultdict
 from resources import Resource
-from errors import BuildError, UpgradeError, TooCloseError
+from errors import BuildError, UpgradeError, TooCloseError, BrokenRoadError
 
 """ Notes on this file's design:
 * All references in Road, Colony, and Hex to each other are *ids*
@@ -27,15 +27,7 @@ class Road:
     def check_validity(self, pos, player_id):
         if self.owner != -1:
             raise BuildError(self.id, player_id, self.owner, "road")
-        connect = False
-        for col in pos.get_colonies(self.colonies):
-            # edge case: can't build roads past another player's colony
-            if col.owner in [-1, self.id]:
-                for road in pos.get_roads(col.roads):
-                    if road.id != self.id and road.owner == self.owner:
-                        connect = True
-                        break
-        if not connect:
+        if self.id not in pos.players[player_id].possible_roads(pos):
             raise BrokenRoadError(self.id, player_id)
 
     def initial_build(self, pos, player_id, settlement, road_id):
@@ -43,8 +35,8 @@ class Road:
         if road_id not in pos.get_colony(settlement).roads:
             raise NotConnectedError(road_id, self.id)
 
-    def build(self, player, pos):
-        self.check_validity()
+    def build(self, pos, player):
+        self.check_validity(pos, player)
         self.owner = player
 
 class Colony:
@@ -83,7 +75,7 @@ class Colony:
             raise TooCloseError(self.id, player_id)
 
     def check_upgrade_validity(self, player_id):
-        if self.owner != -1 and self.owner != player:
+        if self.owner != -1 and self.owner != player_id:
             raise BuildError(self.id, player_id, self.owner, "city")
         elif self.city:
             raise UpgradeError(self.id, player_id)
@@ -93,12 +85,12 @@ class Colony:
             raise TooCloseError(id, player_id)
         self.owner = player_id
 
-    def build(self, player, pos):
-        self.check_validity(player_id, pos)
+    def build(self, pos, player):
+        self.check_validity(pos, player)
         self.owner = player
 
-    def upgrade(self, player):
-        self.check_upgrade_validity(player_id)
+    def upgrade(self, pos, player):
+        self.check_upgrade_validity(player)
         self.city = True
 
     def get_resources(self, pos):

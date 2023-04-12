@@ -1,4 +1,8 @@
+from collections import Counter
+
 def counter_to_list(data):
+    if type(data) == Counter:
+        data = list(data.items())
     return [val for val, cnt in data for i in range(cnt)]
 
 def max_values_dict(data):

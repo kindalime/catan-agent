@@ -20,12 +20,6 @@ class Position:
         self.terminal = False
         self.winner = None
 
-    def check_terminal(self, board):
-        for player in self.players:
-            if player.points >= 10:
-                return True
-        return False
-
     def draw_dev_card(self):
         self.dev_deck.draw()
 
@@ -54,6 +48,6 @@ class Position:
         return self.robber.location
 
     def check_terminal(self):
-        if self.current_turn.points >= 10:
+        if self.players[self.current_turn].points >= 10:
             self.terminal = True
             self.winner = self.current_turn

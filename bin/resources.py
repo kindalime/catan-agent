@@ -14,13 +14,14 @@ class Resource(Enum):
     def random(self):
         return random.choice(list(self.__members__.values()))
 
+# TODO: CHANGE THIS
 def empty_resources():
     return Counter({
-        Resource.WOOD: 0,
-        Resource.BRICK: 0,
-        Resource.SHEEP: 0,
-        Resource.WHEAT: 0,
-        Resource.STONE: 0,
+        Resource.WOOD: 1,
+        Resource.BRICK: 1,
+        Resource.SHEEP: 1,
+        Resource.WHEAT: 1,
+        Resource.STONE: 1,
     })
 
 road_cost = Counter({

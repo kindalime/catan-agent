@@ -38,14 +38,14 @@ class Player:
         # then, check if the colonies are within two of another colony
         possible = []
         for col in pos.get_colonies(colonies):
-            if col.owner != -1:
-                if col.check_proximity():
+            if col.owner == -1:
+                if col.check_proximity(pos):
                     possible.append(col.id)
         return possible
 
     def possible_cities(self, pos):
         # get all settlements this player owns, and then filter
-        return [col.id for col in pos.get_colonies(self.colonies) if col.city]
+        return [col.id for col in pos.get_colonies(self.colonies) if not col.city]
 
     def possible_roads(self, pos):
         # get all road connections to roads this player owns
@@ -67,7 +67,6 @@ class Player:
                 self.dice[h.number][h.resource] += 1
 
     def collect_resources(self, pos, die):
-        self.print_dice()
         print(f"Player {self.id} collects resources: {self.dice[die]}")
         self.resources.update(self.dice[die])
         robber_resources = pos.robber.get_resources(pos)
@@ -75,12 +74,19 @@ class Player:
             self.resources.subtract(robber_resources[self.id])
             print(f"Robber takes: {robber_resources[self.id]}")
 
-    def resource_check(self, resources):
+    def resource_gate(self, resources):
         for resource in resources:
             if resources[resource] > self.resources[resource]:
                 raise NotEnoughResourcesError(self.id, resource, resources[resource], self.resources[resource])
 
+    def resource_check(self, resources):
+        for resource in resources:
+            if resources[resource] > self.resources[resource]:
+                return False
+        return True
+
     def discard_half(self, to_discard):
+        to_discard = Counter(to_discard)
         if self.resources.total() <= 7:
             raise DoNotDiscardError(self.id)
         if to_discard.total() != self.resources.total() // 2:
@@ -92,7 +98,7 @@ class Player:
         # use settlements as "nodes" and roads as "edges"
         # settlements block if owned by someone else, but not if they're unowned
         # TODO: ask prof. glenn about this!
-        pass
+        return 0
 
     def print_dice(self):
         for number in self.dice:

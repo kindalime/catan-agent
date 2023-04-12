@@ -1,6 +1,9 @@
 import copy
 import random
+
 from utils import *
+from resources import *
+from errors import CannotStealError
 
 from player import Player
 from board import Board
@@ -11,6 +14,7 @@ from display import Display
 
 from policy.human import HumanPolicy
 from policy.random import RandomPolicy
+from time import sleep
 
 
 class Catan:
@@ -28,20 +32,21 @@ class Catan:
         ]
 
     def play_game(self):
-        pos = self.begin_game()
+        pos = self.init_pos()
         self.policies = self.policy_setup(pos)
+        pos = self.begin_game(pos)
         while True:
             pos = self.play_turn(pos)
             if pos.terminal:
                 return pos.winner
-            # sleep(1)
+            sleep(1)
 
     def init_pos(self):
         players = [Player(num) for num in range(self.player_num)]
         board = Board()
         dev_deck = DevelopmentDeck()
         robber = Robber()
-        current_turn = random.randint(0, player_num-1)
+        current_turn = random.randint(0, self.player_num-1)
         turn_count = 0
         return Position(board, players, dev_deck, robber, current_turn, turn_count)
 
@@ -49,7 +54,7 @@ class Catan:
         # initial settlement/road placing
         self.display = Display(pos.board)
         for i in range(self.player_num):
-            curr_player = (self.first_player + i) % self.player_num
+            curr_player = (pos.current_turn + i) % self.player_num
             col = self.policies[curr_player].init_settle(pos)
             self.build_init_settlement(pos, pos.players[curr_player], col)
 
@@ -57,7 +62,7 @@ class Catan:
             self.build_init_road(pos, pos.players[curr_player], road, col)
 
         for i in range(self.player_num-1, -1, -1):
-            curr_player = (self.first_player + i) % self.player_num
+            curr_player = (pos.current_turn + i) % self.player_num
             col = self.policies[curr_player].init_settle(pos)
             self.build_init_settlement(pos, pos.players[curr_player], col)
 
@@ -77,7 +82,7 @@ class Catan:
             self.robber_attack(pos)
 
         # ask policy what it wants to do for a specific player
-        pos = self.policies[pos.current_turn].take_turn(pos)
+        self.policies[pos.current_turn].take_turn(pos)
 
         self.end_of_turn(pos)
         return pos
@@ -88,7 +93,7 @@ class Catan:
         if pos.road_reset:
             self.longest_road_reset(pos)
         elif pos.road_calc:
-            self.longest_road_calc(pos)
+            self.longest_road(pos)
 
         # reset variables
         pos.army_calc = False
@@ -105,13 +110,13 @@ class Catan:
     def robber_attack(self, pos):
         # robber attack - must ask policies for discard, and then do discards
         for i in range(self.player_num):
-            if pos.player[i].resources.total() > 7:
-                to_discard = self.policies[i].choose_discard(pos, pos.player[i])
-                pos.player[i].discard(to_discard)
+            if pos.players[i].resources.total() > 7:
+                to_discard = self.policies[i].choose_discard(pos)
+                pos.players[i].discard_half(to_discard)
 
         # then, must ask policy what to do with the robber, and then resolve the robber
-        victim, location = self.policies[i].choose_robber(pos, pos.player[i])
-        self.robber.move_robber(pos, pos.player, victim, location)
+        victim, location = self.policies[pos.current_turn].choose_robber(pos)
+        self.move_robber(pos, pos.current_turn, victim, location)
 
     def largest_army(self, pos):
         if pos.players[pos.current_turn].army > pos.largest_army:
@@ -163,8 +168,8 @@ class Catan:
         self.display.draw_colony(id, player.color)
 
     def build_road(self, pos, player, id):
-        player.resource_check(road_cost)
-        pos.get_road(id).build(player.id)
+        player.resource_gate(road_cost)
+        pos.get_road(id).build(pos, player.id)
         player.roads.append(id)
         pos.road_calc = True
         
@@ -178,12 +183,12 @@ class Catan:
         self.display.draw_road(id, player.color)
 
     def build_settlement(self, pos, player, id):
-        player.resource_check(settlement_cost)
+        player.resource_gate(settlement_cost)
         if player.settlement_supply <= 0:
             raise OutOfSettlementsError(player.id)
 
         colony = pos.get_colony(id)
-        colony.build(player.id)
+        colony.build(pos, player.id)
         player.colonies.append(id)
         player.update_dice(pos, colony)
 
@@ -198,15 +203,15 @@ class Catan:
         if most_common[1] >= 2 and most_common[0] != player.id:
             pos.road_reset = True
         
-        self.display.draw_settlement(id, player.color)
+        self.display.draw_colony(id, player.color)
 
     def build_city(self, pos, player, id):
-        player.resource_check(city_cost)
+        player.resource_gate(city_cost)
         if player.city_supply <= 0:
             raise OutOfCitiesError(player.id)
 
         colony = pos.get_colony(id)
-        colony.upgrade(player.id)
+        colony.upgrade(pos, player.id)
         player.update_dice(pos, colony)
 
         player.resources.subtract(city_cost)
@@ -217,7 +222,7 @@ class Catan:
         self.display.draw_city(id, player.color)
 
     def draw_dev_card(self, pos, player):
-        player.resource_check(dev_card_cost)
+        player.resource_gate(dev_card_cost)
         card = pos.draw_dev_card()
         player.dev_cards[card] += 1
     
@@ -230,7 +235,7 @@ class Catan:
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location
         location = pos.get_hex(location)
-        if victim_id == player_id or victim_id not in location.get_player_ids():
+        if victim_id == player_id or victim_id not in location.get_players(pos):
             raise CannotStealError(player_id, victim_id, location.id)
         pos.robber.location = location.id
 

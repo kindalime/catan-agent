@@ -126,12 +126,12 @@ class Display:
 
     def draw_colony(self, col_id, color):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 7)
+        pygame.draw.circle(self.window, color, coords, 10)
         pygame.display.update()
 
     def draw_city(self, col_id, color):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 10)
+        pygame.draw.circle(self.window, color, coords, 20)
         pygame.display.update()
 
     def draw_road(self, road_id, color):

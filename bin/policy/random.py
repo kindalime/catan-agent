@@ -48,25 +48,25 @@ class RandomPolicy(CatanPolicy):
                     elif col.owner != -1:
                         settles += 1
                         self.players_blocked.append(col.owner)
-                if settlers >= 2 or (settles >= 1 and not blocked):
+                if settles >= 2 or (settles >= 1 and not blocked):
                     break
 
-            return spot, random.choice(self.players_blocked)
+            return random.choice(self.players_blocked), spot
 
     def option_settlement(self, pos):
-        choices = self.player.possible_settlements()
-        if self.player.resource_check(settlement_cost):
-            self.catan.build_settlement(pos, self.player, random.select(choices))
+        choices = self.player.possible_settlements(pos)
+        if choices and self.player.resource_check(settlement_cost):
+            self.catan.build_settlement(pos, self.player, random.choice(choices))
 
     def option_city(self, pos):
-        choices = self.player.possible_cities()
-        if self.player.resource_check(city_cost):
-            self.catan.build_city(pos, self.player, random.select(choices))
+        choices = self.player.possible_cities(pos)
+        if choices and self.player.resource_check(city_cost):
+            self.catan.build_city(pos, self.player, random.choice(choices))
 
     def option_road(self, pos):
-        choices = self.player.possible_roads()
-        if self.player.resource_check(road_cost):
-            self.catan.build_road(pos, self.player, random.select(choices))
+        choices = self.player.possible_roads(pos)
+        if choices and self.player.resource_check(road_cost):
+            self.catan.build_road(pos, self.player, random.choice(choices))
 
     def option_dev(self, pos):
         if self.player.resource_check(dev_card_cost):
@@ -96,12 +96,13 @@ class RandomPolicy(CatanPolicy):
         dev_cards = counter_to_list(list(self.player.dev_cards.items()))
         random.shuffle(dev_cards)
         for card in dev_cards:
-            if random.random < 2/3:
-                self.play_dev_card(pos, self.player, card)
+            if random.random() < 2/3:
+                self.play_dev_card(pos, card)
         
         # possible choices: settlements, cities, roads, dev cards, chosen in random order
         # this algorithm does AT MOST one settlement, one city, two roads, two dev cards a turn
         options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD, Option.DEV, Option.DEV]
+        # options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD]
         option_dict = {
             Option.SETTLEMENT: self.option_settlement,
             Option.CITY: self.option_city,
@@ -111,4 +112,4 @@ class RandomPolicy(CatanPolicy):
         
         random.shuffle(options)
         for option in options:
-            option_dict[option](pos, self.player)
+            option_dict[option](pos)
