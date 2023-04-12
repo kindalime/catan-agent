@@ -73,6 +73,7 @@ class Player:
         if self.id in robber_resources:
             self.resources.subtract(robber_resources[self.id])
             print(f"Robber takes: {robber_resources[self.id]}")
+        print(f"Player resources: {self.resources}")
 
     def resource_gate(self, resources):
         for resource in resources:

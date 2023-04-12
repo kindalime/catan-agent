@@ -69,7 +69,7 @@ class RandomPolicy(CatanPolicy):
             self.catan.build_road(pos, self.player, random.choice(choices))
 
     def option_dev(self, pos):
-        if self.player.resource_check(dev_card_cost):
+        if not pos.dev_deck.is_empty() and self.player.resource_check(dev_card_cost):
             self.catan.draw_dev_card(pos, self.player)
 
     def play_dev_card(self, pos, card_type):
@@ -102,7 +102,6 @@ class RandomPolicy(CatanPolicy):
         # possible choices: settlements, cities, roads, dev cards, chosen in random order
         # this algorithm does AT MOST one settlement, one city, two roads, two dev cards a turn
         options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD, Option.DEV, Option.DEV]
-        # options = [Option.SETTLEMENT, Option.CITY, Option.ROAD, Option.ROAD]
         option_dict = {
             Option.SETTLEMENT: self.option_settlement,
             Option.CITY: self.option_city,

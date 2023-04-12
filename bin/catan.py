@@ -174,6 +174,7 @@ class Catan:
         pos.road_calc = True
         
         self.display.draw_road(id, player.color)
+        print(f"DEBUG: Player resources: {player.resources}")
 
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
@@ -204,6 +205,7 @@ class Catan:
             pos.road_reset = True
         
         self.display.draw_colony(id, player.color)
+        print(f"DEBUG: Player resources: {player.resources}")
 
     def build_city(self, pos, player, id):
         player.resource_gate(city_cost)
@@ -220,17 +222,20 @@ class Catan:
         player.points += 1
 
         self.display.draw_city(id, player.color)
+        print(f"DEBUG: Player resources: {player.resources}")
 
     def draw_dev_card(self, pos, player):
         player.resource_gate(dev_card_cost)
         card = pos.draw_dev_card()
         player.dev_cards[card] += 1
-    
+        print(f"DEBUG: Player resources: {player.resources}")
+
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:
             raise DontHaveCardError(player.id, card)
         play_card(self, player, card, **kwargs)
         player.dev_cards[card] -= 1
+        print(f"DEBUG: Player resources: {player.resources}")
 
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location

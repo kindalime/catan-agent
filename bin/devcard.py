@@ -43,6 +43,9 @@ class DevelopmentDeck:
         else:
             return self.deck.pop()
 
+    def is_empty(self):
+        return not self.deck
+
 ### All dev cards accept a pos and a player (NOT player_id)
 
 def vp_card(catan, pos, player, **kwargs):
