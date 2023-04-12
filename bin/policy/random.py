@@ -5,6 +5,7 @@ from utils import *
 from resources import *
 from policy.policy import CatanPolicy
 from devcard import *
+from time import sleep
 
 class Option(Enum):
     SETTLEMENT = 0
@@ -73,6 +74,7 @@ class RandomPolicy(CatanPolicy):
             self.catan.draw_dev_card(pos, self.player)
 
     def play_dev_card(self, pos, card_type):
+        print(card_type)
         match card_type:
             case DevCard.KNIGHT:
                 spot, self.player = self.choose_robber(pos, self.player)
@@ -93,6 +95,7 @@ class RandomPolicy(CatanPolicy):
 
     def take_turn(self, pos):
         # for each dev card: 33% chance to play every turn
+        print(self.player.dev_cards)
         dev_cards = counter_to_list(list(self.player.dev_cards.items()))
         random.shuffle(dev_cards)
         for card in dev_cards:

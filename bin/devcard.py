@@ -49,23 +49,28 @@ class DevelopmentDeck:
 ### All dev cards accept a pos and a player (NOT player_id)
 
 def vp_card(catan, pos, player, **kwargs):
+    print(f"Player {player.id} plays VP dev card for one points.")
     player.points += 1
 
 def road_card(catan, pos, player, **kwargs):
+    print(f"Player {player.id} plays road dev card for roads {kwargs}")
     pos.get_road(kwargs[first]).build(player)
     if second is not None:
         pos.get_road(kwargs[second]).build(player)    
 
 def knight_card(catan, pos, player, **kwargs):
+    print(f"Player {player.id} plays knight dev card on location {kwargs[location]} and steals from {kwargs[victim]}")
     catan.move_robber(kwargs[location], kwargs[victim])
     player.army += 1
     pos.army_calc = True
 
 def plenty_card(catan, pos, player, **kwargs):
+    print(f"Player {player.id} plays plenty dev card for resources {kwargs[first]}, {kwargs[second]}.")
     player[kwargs[first]] += 1
     player[kwargs[second]] += 1
 
 def monopoly_card(catan, pos, player, **kwargs):
+    print(f"Player {player.id} plays monopoly dev card for resource {kwargs[res]}")
     for player in pos.players:
         if player.id != player:
             player.resources[kwargs[res]] += player.resources[kwargs[res]]

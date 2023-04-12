@@ -38,8 +38,10 @@ class Catan:
         while True:
             pos = self.play_turn(pos)
             if pos.terminal:
-                return pos.winner
-            sleep(1)
+                break
+        print(f"Game Over! Winner: {pos.winner}")
+        print(f"Scores: {[(i, pos.players[i].points) for i in range(self.player_num)]}")
+        return pos.winner
 
     def init_pos(self):
         players = [Player(num) for num in range(self.player_num)]
@@ -74,7 +76,7 @@ class Catan:
         pos = copy.copy(pos)
 
         dice = random.randint(1, 6) + random.randint(1, 6) # roll the dice
-        print(f"Dice roll: {dice}")
+        print(f"Player {pos.current_turn} turn. Dice roll: {dice}")
         if dice != 7: # gather resources as usual
             for player in pos.players:
                 player.collect_resources(pos, dice)
@@ -110,9 +112,11 @@ class Catan:
     def robber_attack(self, pos):
         # robber attack - must ask policies for discard, and then do discards
         for i in range(self.player_num):
+            print(f"DEBUG: Robber attack. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
             if pos.players[i].resources.total() > 7:
                 to_discard = self.policies[i].choose_discard(pos)
                 pos.players[i].discard_half(to_discard)
+                print(f"DEBUG: Cards discarded. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
         # then, must ask policy what to do with the robber, and then resolve the robber
         victim, location = self.policies[pos.current_turn].choose_robber(pos)
@@ -167,15 +171,6 @@ class Catan:
 
         self.display.draw_colony(id, player.color)
 
-    def build_road(self, pos, player, id):
-        player.resource_gate(road_cost)
-        pos.get_road(id).build(pos, player.id)
-        player.roads.append(id)
-        pos.road_calc = True
-        
-        self.display.draw_road(id, player.color)
-        print(f"DEBUG: Player resources: {player.resources}")
-
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
         player.roads.append(id)
@@ -183,17 +178,28 @@ class Catan:
 
         self.display.draw_road(id, player.color)
 
+    def build_road(self, pos, player, id):
+        player.resource_gate(road_cost)
+        player.resources.subtract(road_cost)
+
+        pos.get_road(id).build(pos, player.id)
+        player.roads.append(id)
+        pos.road_calc = True
+
+        self.display.draw_road(id, player.color)
+        print(f"DEBUG: Road built. Player {player.id} resources: {resources_str(player.resources)}")
+
     def build_settlement(self, pos, player, id):
         player.resource_gate(settlement_cost)
         if player.settlement_supply <= 0:
             raise OutOfSettlementsError(player.id)
+        player.resources.subtract(settlement_cost)
 
         colony = pos.get_colony(id)
         colony.build(pos, player.id)
         player.colonies.append(id)
         player.update_dice(pos, colony)
 
-        player.resources.subtract(settlement_cost)
         player.settlement_supply -= 1
         player.points += 1
 
@@ -205,37 +211,39 @@ class Catan:
             pos.road_reset = True
         
         self.display.draw_colony(id, player.color)
-        print(f"DEBUG: Player resources: {player.resources}")
+        print(f"DEBUG: Settlement built. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_city(self, pos, player, id):
         player.resource_gate(city_cost)
         if player.city_supply <= 0:
             raise OutOfCitiesError(player.id)
+        player.resources.subtract(city_cost)
 
         colony = pos.get_colony(id)
         colony.upgrade(pos, player.id)
         player.update_dice(pos, colony)
 
-        player.resources.subtract(city_cost)
         player.settlement_supply += 1
         player.city_supply -= 1
         player.points += 1
 
         self.display.draw_city(id, player.color)
-        print(f"DEBUG: Player resources: {player.resources}")
+        print(f"DEBUG: City built. Player {player.id} resources: {resources_str(player.resources)}")
 
     def draw_dev_card(self, pos, player):
         player.resource_gate(dev_card_cost)
         card = pos.draw_dev_card()
+        player.resources.subtract(dev_card_cost)
         player.dev_cards[card] += 1
-        print(f"DEBUG: Player resources: {player.resources}")
+        print(f"DEBUG: Dev card drawn. Player {player.id} resources: {resources_str(player.resources)}")
 
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:
             raise DontHaveCardError(player.id, card)
         play_card(self, player, card, **kwargs)
         player.dev_cards[card] -= 1
-        print(f"DEBUG: Player resources: {player.resources}")
+        for i in range(self.player_num):
+            print(f"DEBUG: Dev card used. Player {pos.players[i]} resources: {resources_str(pos.players[i].resources)}")
 
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location
@@ -243,13 +251,17 @@ class Catan:
         if victim_id == player_id or victim_id not in location.get_players(pos):
             raise CannotStealError(player_id, victim_id, location.id)
         pos.robber.location = location.id
+        print(f"Robber moved from {prev_location} to {location.id}.")
 
         # steal a resource
         resources = counter_to_list(pos.players[victim_id].resources)
         if resources:
             stolen = random.choice(resources)
+            print(f"DEBUG: Resource stolen from player {victim_id}: {stolen}")
             pos.players[player_id].resources.update([stolen])
             pos.players[victim_id].resources.subtract([stolen])
+            print(f"DEBUG: Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
+            print(f"DEBUG: Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")
 
         # move robber display
         self.display.draw_hex(prev_location)
