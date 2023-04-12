@@ -20,7 +20,7 @@ class Position:
         self.terminal = False
         self.winner = None
 
-    def check_terminal(board):
+    def check_terminal(self, board):
         for player in self.players:
             if player.points >= 10:
                 return True

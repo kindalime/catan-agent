@@ -16,20 +16,20 @@ from policy.random import RandomPolicy
 class Catan:
     def __init__(self, player_num):
         self.player_num = player_num
-        self.players = [Player(i) for i in range(self.player_num)]
-        self.first_player = random.randint(0, player_num-1)
         self.display = None
-        self.policies = self.policy_setup()
+        self.policies = None
 
-    def policy_setup(self):
+    def policy_setup(self, pos):
+        # TODO: change
         return [
-            RandomPolicy(self, self.players[0]),
-            RandomPolicy(self, self.players[1]),
-            RandomPolicy(self, self.players[2]),
+            RandomPolicy(self, pos.players[0]),
+            RandomPolicy(self, pos.players[1]),
+            RandomPolicy(self, pos.players[2]),
         ]
 
     def play_game(self):
         pos = self.begin_game()
+        self.policies = self.policy_setup(pos)
         while True:
             pos = self.play_turn(pos)
             if pos.terminal:
@@ -41,29 +41,28 @@ class Catan:
         board = Board()
         dev_deck = DevelopmentDeck()
         robber = Robber()
-        current_turn = self.first_player
+        current_turn = random.randint(0, player_num-1)
         turn_count = 0
         return Position(board, players, dev_deck, robber, current_turn, turn_count)
 
-    def begin_game(self):
+    def begin_game(self, pos):
         # initial settlement/road placing
-        pos = self.init_pos()
         self.display = Display(pos.board)
         for i in range(self.player_num):
             curr_player = (self.first_player + i) % self.player_num
             col = self.policies[curr_player].init_settle(pos)
-            self.build_init_settlement(pos, self.players[curr_player], col)
+            self.build_init_settlement(pos, pos.players[curr_player], col)
 
             road = self.policies[curr_player].init_road(pos, col)
-            self.build_init_road(pos, self.players[curr_player], road, col)
+            self.build_init_road(pos, pos.players[curr_player], road, col)
 
         for i in range(self.player_num-1, -1, -1):
             curr_player = (self.first_player + i) % self.player_num
             col = self.policies[curr_player].init_settle(pos)
-            self.build_init_settlement(pos, self.players[curr_player], col)
+            self.build_init_settlement(pos, pos.players[curr_player], col)
 
             road = self.policies[curr_player].init_road(pos, col)
-            self.build_init_road(pos, self.players[curr_player], road, col)
+            self.build_init_road(pos, pos.players[curr_player], road, col)
         return pos
 
     def play_turn(self, pos):
@@ -236,11 +235,11 @@ class Catan:
         pos.robber.location = location.id
 
         # steal a resource
-        resources = counter_to_list(self.players[victim_id].resources)
+        resources = counter_to_list(pos.players[victim_id].resources)
         if resources:
             stolen = random.choice(resources)
-            self.players[player_id].resources.update([stolen])
-            self.players[victim_id].resources.subtract([stolen])
+            pos.players[player_id].resources.update([stolen])
+            pos.players[victim_id].resources.subtract([stolen])
 
         # move robber display
         self.display.draw_hex(prev_location)
