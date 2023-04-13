@@ -41,7 +41,9 @@ class DevelopmentDeck:
         if not self.deck:
             raise OutOfCardsError()
         else:
-            return self.deck.pop()
+            x = self.deck.pop()
+            print (x)
+            return x
 
     def is_empty(self):
         return not self.deck
