@@ -144,6 +144,7 @@ class Catan:
     def longest_road_reset(self, pos):
         # calculates longest road for ALL players and resolves according to rules
         # only to be used when a settlement cuts off a road
+        print("DEBUG: Longest road reset!")
         if pos.longest_road_owner == -1:
             return
         
@@ -152,16 +153,16 @@ class Catan:
         if val < 5:
             pos.longest_road = 4
             pos.longest_road_owner = -1
-            pos.players[pos.longest_road_owner] -= 2
+            pos.players[pos.longest_road_owner].points -= 2
         else: 
             pos.longest_road = val
-            pos.players[pos.longest_road_owner] -= 2
+            pos.players[pos.longest_road_owner].points -= 2
             if pos.longest_road_owner not in maxes:
                 if len(maxes) > 1:
                     pos.longest_road_owner = -1
                 else:
                     pos.longest_road_owner = maxes[0]
-                    pos.players[pos.longest_road_owner] += 2
+                    pos.players[pos.longest_road_owner].points += 2
 
     def build_init_settlement(self, pos, player, id):
         pos.get_colony(id).initial_build(pos, player.id)

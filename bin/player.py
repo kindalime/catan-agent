@@ -135,14 +135,12 @@ class Player:
         max_depth, visited = dfs(endpoints)
 
         # if there are roads where connected == 2 that are not in visited, they are in a cycle
-        print(max_depth, visited)
         for road in cycles:
             if road not in visited:
                 max_depth_c, visited_c = dfs([road])
                 max_depth = max(max_depth, max_depth_c)
                 visited = visited | visited_c
                 cont = False
-        print(max_depth, visited)
 
         return max_depth
         
