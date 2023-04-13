@@ -7,7 +7,7 @@ from errors import CannotStealError
 
 from player import Player
 from board import Board
-from devcard import DevelopmentDeck
+from devcard import *
 from robber import Robber
 from position import Position
 from display import Display
@@ -126,7 +126,7 @@ class Catan:
         if pos.players[pos.current_turn].army > pos.largest_army:
             pos.players[pos.largest_army_owner].points -= 2
             pos.players[pos.current_turn].points += 2
-            pos.largest_army_owner = current_turn
+            pos.largest_army_owner = pos.current_turn
     
     def longest_road(self, pos):
         # calculate longest road for this player only
@@ -240,10 +240,10 @@ class Catan:
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:
             raise DontHaveCardError(player.id, card)
-        play_card(self, player, card, **kwargs)
+        play_card(self, pos, player, card, **kwargs)
         player.dev_cards[card] -= 1
         for i in range(self.player_num):
-            print(f"DEBUG: Dev card used. Player {pos.players[i]} resources: {resources_str(pos.players[i].resources)}")
+            print(f"DEBUG: Dev card used. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location

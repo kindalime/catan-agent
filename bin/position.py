@@ -21,7 +21,7 @@ class Position:
         self.winner = None
 
     def draw_dev_card(self):
-        self.dev_deck.draw()
+        return self.dev_deck.draw()
 
     def get_road(self, id):
         return self.board.roads[id]

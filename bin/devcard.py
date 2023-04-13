@@ -41,9 +41,7 @@ class DevelopmentDeck:
         if not self.deck:
             raise OutOfCardsError()
         else:
-            x = self.deck.pop()
-            print (x)
-            return x
+            return self.deck.pop()
 
     def is_empty(self):
         return not self.deck
@@ -56,27 +54,27 @@ def vp_card(catan, pos, player, **kwargs):
 
 def road_card(catan, pos, player, **kwargs):
     print(f"Player {player.id} plays road dev card for roads {kwargs}")
-    pos.get_road(kwargs[first]).build(player)
-    if second is not None:
-        pos.get_road(kwargs[second]).build(player)    
+    pos.get_road(kwargs['first']).build(pos, player.id)
+    if kwargs['second'] is not None:
+        pos.get_road(kwargs['second']).build(pos, player.id)    
 
 def knight_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays knight dev card on location {kwargs[location]} and steals from {kwargs[victim]}")
-    catan.move_robber(kwargs[location], kwargs[victim])
+    print(f"Player {player.id} plays knight dev card on location {kwargs['location']} and steals from {kwargs['victim']}")
+    catan.move_robber(pos, player.id, kwargs['victim'], kwargs['location'])
     player.army += 1
     pos.army_calc = True
 
 def plenty_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays plenty dev card for resources {kwargs[first]}, {kwargs[second]}.")
-    player[kwargs[first]] += 1
-    player[kwargs[second]] += 1
+    print(f"Player {player.id} plays plenty dev card for resources {kwargs['first']}, {kwargs['second']}.")
+    player.resources[kwargs['first']] += 1
+    player.resources[kwargs['second']] += 1
 
 def monopoly_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays monopoly dev card for resource {kwargs[res]}")
+    print(f"Player {player.id} plays monopoly dev card for resource {kwargs['res']}")
     for player in pos.players:
         if player.id != player:
-            player.resources[kwargs[res]] += player.resources[kwargs[res]]
-            player.resources[kwargs[res]] == 0
+            player.resources[kwargs['res']] += player.resources[kwargs['res']]
+            player.resources[kwargs['res']] == 0
 
 def play_card(catan, pos, player, card, **kwargs):
     cards = {

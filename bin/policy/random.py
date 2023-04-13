@@ -74,11 +74,10 @@ class RandomPolicy(CatanPolicy):
             self.catan.draw_dev_card(pos, self.player)
 
     def play_dev_card(self, pos, card_type):
-        print(card_type)
         match card_type:
             case DevCard.KNIGHT:
-                spot, self.player = self.choose_robber(pos, self.player)
-                self.catan.use_dev_card(pos, self.player, card_type, location=pos, victim=self.player)
+                victim, spot = self.choose_robber(pos)
+                self.catan.use_dev_card(pos, self.player, card_type, location=spot, victim=victim)
             case DevCard.VP:
                 self.catan.use_dev_card(pos, self.player, card_type)
             case DevCard.PLENTY:
@@ -86,16 +85,17 @@ class RandomPolicy(CatanPolicy):
             case DevCard.MONOPOLY:
                 self.catan.use_dev_card(pos, self.player, card_type, res=Resource.random())
             case DevCard.ROAD:
-                choices = self.player.possible_roads()
+                choices = self.player.possible_roads(pos)
                 random.shuffle(choices)
                 if len(choices) == 1:
-                    self.catan.use_dev_card(pos, self.player, card_type, choices[0], None)
+                    self.catan.use_dev_card(pos, self.player, card_type, first=choices[0], second=None)
                 elif len(choices) != 0:
-                    self.catan.use_dev_card(pos, self.player, card_type, choices[0], choices[1])
+                    self.catan.use_dev_card(pos, self.player, card_type, first=choices[0], second=choices[1])
+            case None:
+                raise ValueError("Incorrect dev card!")
 
     def take_turn(self, pos):
         # for each dev card: 33% chance to play every turn
-        print(self.player.dev_cards)
         dev_cards = counter_to_list(list(self.player.dev_cards.items()))
         random.shuffle(dev_cards)
         for card in dev_cards:
