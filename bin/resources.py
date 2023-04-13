@@ -20,11 +20,11 @@ def resources_str(data):
 # TODO: CHANGE THIS
 def empty_resources():
     return Counter({
-        Resource.WOOD: 1,
-        Resource.BRICK: 1,
-        Resource.SHEEP: 1,
-        Resource.WHEAT: 1,
-        Resource.STONE: 1,
+        Resource.WOOD: 0,
+        Resource.BRICK: 0,
+        Resource.SHEEP: 0,
+        Resource.WHEAT: 0,
+        Resource.STONE: 0,
     })
 
 road_cost = Counter({

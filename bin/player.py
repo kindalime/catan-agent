@@ -100,6 +100,7 @@ class Player:
         # settlements block if owned by someone else, but not if they're unowned
         # get all of the "start positions" and then run dfs.
         endpoints = []
+        cycles = []
         for road in pos.get_roads(self.roads):
             connected = 0
             for colony in pos.get_colonies(road.colonies):
@@ -108,25 +109,42 @@ class Player:
                         connected += 1
             if connected == 1:
                 endpoints.append(road)
+            elif connected == 2:
+                cycles.append(road)
 
         def dfs_helper(pos, curr, visited, depth):
             # get same-owner children
             visited.add(curr.id)
-            max_depth = 0
+            max_depth = depth
             for colony in pos.get_colonies(curr.colonies):
                 for road in pos.get_roads(colony.roads):
                     if road.id not in visited and road.owner == self.id:
-                        max_depth = max(max_depth, dfs_helper(pos, road, visited, depth+1))
-            return max_depth
+                        new_depth, visited = dfs_helper(pos, road, visited, depth+1)
+                        max_depth = max(max_depth, new_depth)
+            return max_depth, visited
 
         def dfs(endpoints):
             visited = set()
             max_depth = 0
             for end in endpoints:
-                max_depth = max(dfs_helper(pos, end, visited, 0))
-            return max_depth
+                if end.id not in visited:
+                    depth, visited = dfs_helper(pos, end, visited, 0)
+                    max_depth = max(max_depth, depth)
+            return max_depth, visited
 
-        return dfs(endpoints)
+        max_depth, visited = dfs(endpoints)
+
+        # if there are roads where connected == 2 that are not in visited, they are in a cycle
+        print(max_depth, visited)
+        for road in cycles:
+            if road not in visited:
+                max_depth_c, visited_c = dfs([road])
+                max_depth = max(max_depth, max_depth_c)
+                visited = visited | visited_c
+                cont = False
+        print(max_depth, visited)
+
+        return max_depth
         
     def print_dice(self):
         for number in self.dice:

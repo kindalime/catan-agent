@@ -124,24 +124,29 @@ class Catan:
 
     def largest_army(self, pos):
         if pos.players[pos.current_turn].army > pos.largest_army:
-            pos.players[pos.largest_army_owner].points -= 2
+            if pos.longest_road_owner != -1:
+                pos.players[pos.largest_army_owner].points -= 2
             pos.players[pos.current_turn].points += 2
             pos.largest_army_owner = pos.current_turn
+            pos.largest_army = pos.players[pos.current_turn].army
     
     def longest_road(self, pos):
         # calculate longest road for this player only
         player_road = pos.players[pos.current_turn].longest_road(pos)
         if player_road > pos.longest_road:
-            pos.players[pos.longest_road_owner].points -= 2
+            print(f"New longest road! Road length: {player_road} by player {pos.current_turn}")
+            if pos.longest_road_owner != -1:
+                pos.players[pos.longest_road_owner].points -= 2
             pos.players[pos.current_turn].points += 2
-            pos.longest_road_owner = current_turn
+            pos.longest_road_owner = pos.current_turn
+            pos.longest_road = player_road
 
     def longest_road_reset(self, pos):
         # calculates longest road for ALL players and resolves according to rules
         # only to be used when a settlement cuts off a road
         if pos.longest_road_owner == -1:
             return
-
+        
         lens = {player.id: player.longest_road(pos) for player in pos.players}
         maxes, val = max_values_dict(lens)
         if val < 5:
@@ -150,8 +155,8 @@ class Catan:
             pos.players[pos.longest_road_owner] -= 2
         else: 
             pos.longest_road = val
+            pos.players[pos.longest_road_owner] -= 2
             if pos.longest_road_owner not in maxes:
-                pos.players[pos.longest_road_owner] -= 2
                 if len(maxes) > 1:
                     pos.longest_road_owner = -1
                 else:
@@ -170,6 +175,7 @@ class Catan:
                 player.resources[resource] += 1 
 
         self.display.draw_colony(id, player.color)
+        print(f"DEBUG: Init settlement built in {id} for Player {player.id}.")
 
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
@@ -177,6 +183,7 @@ class Catan:
         player.points += 1
 
         self.display.draw_road(id, player.color)
+        print(f"DEBUG: Init road built in {id} for Player {player.id}.")
 
     def build_road(self, pos, player, id):
         player.resource_gate(road_cost)
@@ -187,7 +194,7 @@ class Catan:
         pos.road_calc = True
 
         self.display.draw_road(id, player.color)
-        print(f"DEBUG: Road built. Player {player.id} resources: {resources_str(player.resources)}")
+        print(f"DEBUG: Road built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_settlement(self, pos, player, id):
         player.resource_gate(settlement_cost)
@@ -211,7 +218,7 @@ class Catan:
             pos.road_reset = True
         
         self.display.draw_colony(id, player.color)
-        print(f"DEBUG: Settlement built. Player {player.id} resources: {resources_str(player.resources)}")
+        print(f"DEBUG: Settlement built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_city(self, pos, player, id):
         player.resource_gate(city_cost)
@@ -228,7 +235,7 @@ class Catan:
         player.points += 1
 
         self.display.draw_city(id, player.color)
-        print(f"DEBUG: City built. Player {player.id} resources: {resources_str(player.resources)}")
+        print(f"DEBUG: City built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def draw_dev_card(self, pos, player):
         player.resource_gate(dev_card_cost)

@@ -34,6 +34,7 @@ class Road:
         # road must be next to the initial settlement and unowned
         if road_id not in pos.get_colony(settlement).roads:
             raise NotConnectedError(road_id, self.id)
+        self.owner = player_id
 
     def build(self, pos, player):
         self.check_validity(pos, player)
