@@ -98,9 +98,36 @@ class Player:
         # longest path algorithm for an undirected cyclic disconnected graph
         # use settlements as "nodes" and roads as "edges"
         # settlements block if owned by someone else, but not if they're unowned
-        # TODO: ask prof. glenn about this!
-        return 0
+        # get all of the "start positions" and then run dfs.
+        endpoints = []
+        for road in pos.get_roads(self.roads):
+            connected = 0
+            for colony in pos.get_colonies(road.colonies):
+                for r in pos.get_roads(colony.roads):
+                    if r.id != road.id and r.owner == road.owner:
+                        connected += 1
+            if connected == 1:
+                endpoints.append(road)
 
+        def dfs_helper(pos, curr, visited, depth):
+            # get same-owner children
+            visited.add(curr.id)
+            max_depth = 0
+            for colony in pos.get_colonies(curr.colonies):
+                for road in pos.get_roads(colony.roads):
+                    if road.id not in visited and road.owner == self.id:
+                        max_depth = max(max_depth, dfs_helper(pos, road, visited, depth+1))
+            return max_depth
+
+        def dfs(endpoints):
+            visited = set()
+            max_depth = 0
+            for end in endpoints:
+                max_depth = max(dfs_helper(pos, end, visited, 0))
+            return max_depth
+
+        return dfs(endpoints)
+        
     def print_dice(self):
         for number in self.dice:
             print(number, self.dice[number])
