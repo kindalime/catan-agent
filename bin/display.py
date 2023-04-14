@@ -38,6 +38,9 @@ class Display:
         pygame.display.update()
         return window
 
+    def save(self, name):
+        pygame.image.save(self.window, name)
+
     # Below three functions mirror the init functions present in the Board class.
     # Present in this class and not that class to separate all pygame functionality.
     def hex_dict_init(self):
@@ -123,6 +126,8 @@ class Display:
         pygame.draw.line(self.window, "red", [coords[0]-20, coords[1]-20], [coords[0]+20, coords[1]+20], width=7)
         pygame.draw.line(self.window, "red", [coords[0]+20, coords[1]-20], [coords[0]-20, coords[1]+20], width=7)
         pygame.display.update()
+
+    # TODO: remove_robber
 
     def draw_colony(self, col_id, color):
         coords = self.col_dict[col_id]

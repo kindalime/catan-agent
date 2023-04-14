@@ -3,7 +3,7 @@ from utils import *
 from enum import Enum
 from collections import Counter
 
-class DevCard:
+class DevCard(Enum):
     NONE = 0
     VP = 1
     ROAD = 2
@@ -54,9 +54,9 @@ def vp_card(catan, pos, player, **kwargs):
 
 def road_card(catan, pos, player, **kwargs):
     print(f"Player {player.id} plays road dev card for roads {kwargs}")
-    pos.get_road(kwargs['first']).build(pos, player.id)
+    catan.build_road(pos, player, kwargs['first'], free=True)
     if kwargs['second'] is not None:
-        pos.get_road(kwargs['second']).build(pos, player.id)    
+        catan.build_road(pos, player, kwargs['second'], free=True)
 
 def knight_card(catan, pos, player, **kwargs):
     print(f"Player {player.id} plays knight dev card on location {kwargs['location']} and steals from {kwargs['victim']}")

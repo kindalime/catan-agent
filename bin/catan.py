@@ -41,6 +41,8 @@ class Catan:
                 break
         print(f"Game Over! Winner: {pos.winner}")
         print(f"Scores: {[(i, pos.players[i].points) for i in range(self.player_num)]}")
+        print(f"DEBUG: Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
+        self.display.save("image.jpeg")
         return pos.winner
 
     def init_pos(self):
@@ -74,6 +76,7 @@ class Catan:
 
     def play_turn(self, pos):
         pos = copy.copy(pos)
+        print(f"VPs: {[p.points for p in pos.players]}")
 
         dice = random.randint(1, 6) + random.randint(1, 6) # roll the dice
         print(f"Player {pos.current_turn} turn. Dice roll: {dice}")
@@ -124,22 +127,23 @@ class Catan:
 
     def largest_army(self, pos):
         if pos.players[pos.current_turn].army > pos.largest_army:
-            if pos.longest_road_owner != -1:
+            if pos.largest_army_owner != -1:
                 pos.players[pos.largest_army_owner].points -= 2
             pos.players[pos.current_turn].points += 2
             pos.largest_army_owner = pos.current_turn
             pos.largest_army = pos.players[pos.current_turn].army
+            print(f"New largest army: Player {pos.current_turn} with {pos.largest_army} knights!")
     
     def longest_road(self, pos):
         # calculate longest road for this player only
         player_road = pos.players[pos.current_turn].longest_road(pos)
         if player_road > pos.longest_road:
-            print(f"New longest road! Road length: {player_road} by player {pos.current_turn}")
             if pos.longest_road_owner != -1:
                 pos.players[pos.longest_road_owner].points -= 2
             pos.players[pos.current_turn].points += 2
             pos.longest_road_owner = pos.current_turn
             pos.longest_road = player_road
+            print(f"New longest road! Player {pos.current_turn} with road length {player_road}!")
 
     def longest_road_reset(self, pos):
         # calculates longest road for ALL players and resolves according to rules
@@ -181,14 +185,14 @@ class Catan:
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
         player.roads.append(id)
-        player.points += 1
 
         self.display.draw_road(id, player.color)
         print(f"DEBUG: Init road built in {id} for Player {player.id}.")
 
-    def build_road(self, pos, player, id):
-        player.resource_gate(road_cost)
-        player.resources.subtract(road_cost)
+    def build_road(self, pos, player, id, free=False):
+        if not free:
+            player.resource_gate(road_cost)
+            player.resources.subtract(road_cost)
 
         pos.get_road(id).build(pos, player.id)
         player.roads.append(id)
@@ -243,7 +247,7 @@ class Catan:
         card = pos.draw_dev_card()
         player.resources.subtract(dev_card_cost)
         player.dev_cards[card] += 1
-        print(f"DEBUG: Dev card drawn. Player {player.id} resources: {resources_str(player.resources)}")
+        print(f"DEBUG: Dev card {DevCard(card).name} drawn. Player {player.id} resources: {resources_str(player.resources)}")
 
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:

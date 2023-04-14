@@ -11,11 +11,13 @@ class Player:
         self.dice = {i: empty_resources() for i in range(2, 13)}
         self.resources = empty_resources()
         self.dev_cards = empty_deck()
-        self.points = 0
+        self.points = 2
         self.army = 0
         self.settlement_supply = 5
         self.city_supply = 4
         self.color = player_colors[self.id]
+        self.longest = None
+        self.endpoints = None
 
     def possible_init_settlements(self, pos):
         # loop through *all* settlements and get valid placements
@@ -99,49 +101,57 @@ class Player:
         # use settlements as "nodes" and roads as "edges"
         # settlements block if owned by someone else, but not if they're unowned
         # get all of the "start positions" and then run dfs.
-        endpoints = []
-        cycles = []
-        for road in pos.get_roads(self.roads):
-            connected = 0
-            for colony in pos.get_colonies(road.colonies):
-                for r in pos.get_roads(colony.roads):
-                    if r.id != road.id and r.owner == road.owner:
-                        connected += 1
-            if connected == 1:
-                endpoints.append(road)
-            elif connected == 2:
-                cycles.append(road)
 
-        def dfs_helper(pos, curr, visited, depth):
+        # TODO: buggy for loops and larger edge cases?
+        endpoints = []
+        for road in pos.get_roads(self.roads):
+            for colony in pos.get_colonies(road.colonies):
+                if colony.owner not in [-1, self.id]: # endpoint if cut off by another player's settlement
+                    endpoints.append(road)
+                    break
+                else: # road is an "endpoint" if it is the only road on its vertex
+                    connected = 0
+                    for r in pos.get_roads(colony.roads):
+                        if r.id != road.id and r.owner == self.id:
+                            connected += 1
+                    if connected == 0:
+                        endpoints.append(road)
+                        break
+
+        def dfs_helper(pos, curr, visited_roads, visited_cols, depth):
             # get same-owner children
-            visited.add(curr.id)
+            print(curr.id, visited_roads, visited_cols, depth)
+            visited_roads.add(curr.id)
             max_depth = depth
+            max_endpoint = curr.id
             for colony in pos.get_colonies(curr.colonies):
-                for road in pos.get_roads(colony.roads):
-                    if road.id not in visited and road.owner == self.id:
-                        new_depth, visited = dfs_helper(pos, road, visited, depth+1)
-                        max_depth = max(max_depth, new_depth)
-            return max_depth, visited
+                if colony.id not in visited_cols and colony.owner in [-1, self.id]:
+                    visited_cols.add(colony.id)
+                    for road in pos.get_roads(colony.roads):
+                        if road.id not in visited_roads and road.owner == self.id:
+                            new_depth, visited_roads, visited_cols, new_endpoint = dfs_helper(pos, road, visited_roads, visited_cols, depth+1)
+                            if new_depth > max_depth:
+                                max_depth = new_depth
+                                max_endpoint = new_endpoint
+            return max_depth, visited_roads, visited_cols, max_endpoint
 
         def dfs(endpoints):
-            visited = set()
             max_depth = 0
+            max_endpoints = None
             for end in endpoints:
-                if end.id not in visited:
-                    depth, visited = dfs_helper(pos, end, visited, 0)
-                    max_depth = max(max_depth, depth)
-            return max_depth, visited
+                visited_roads = set()
+                visited_cols = set()
+                depth, visited_roads, visited_cols, endpoint = dfs_helper(pos, end, visited_roads, visited_cols, 1)
+                if depth > max_depth:
+                    max_depth = depth
+                    max_endpoints = [end.id, endpoint]
+            return max_depth, visited_roads, visited_cols, max_endpoints
 
-        max_depth, visited = dfs(endpoints)
+        max_depth, visited_roads, visited_cols, max_endpoints = dfs(endpoints)
 
-        # if there are roads where connected == 2 that are not in visited, they are in a cycle
-        for road in cycles:
-            if road not in visited:
-                max_depth_c, visited_c = dfs([road])
-                max_depth = max(max_depth, max_depth_c)
-                visited = visited | visited_c
-                cont = False
-
+        self.longest = max_depth
+        self.endpoints = max_endpoints
+        print(f"DEPTH: {max_depth}, {max_endpoints}")
         return max_depth
         
     def print_dice(self):

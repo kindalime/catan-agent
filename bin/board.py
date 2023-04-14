@@ -97,6 +97,9 @@ class Colony:
     def get_resources(self, pos):
         return [pos.get_hex(h).resource for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT]
 
+    def count_pips(self, pos):
+        return sum([pos.get_hex(h).number for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT])
+
 class Hex:
     curr_id = 0
     def __init__(self, resource, number):
@@ -211,8 +214,8 @@ class Board:
             self.create_road(j, i+1)
             self.create_road(j+2, i+3)
             j += 5
-        self.create_road(29, 30)
         self.create_road(27, 46)
+        self.create_road(29, 30)
 
         # Inner Ring
         for i in range(30, 47):
