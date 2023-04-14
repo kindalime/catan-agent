@@ -14,6 +14,7 @@ from display import Display
 
 from policy.human import HumanPolicy
 from policy.random import RandomPolicy
+from policy.baseline import BaselinePolicy
 from time import sleep
 
 
@@ -26,9 +27,9 @@ class Catan:
     def policy_setup(self, pos):
         # TODO: change
         return [
-            RandomPolicy(self, pos.players[0]),
-            RandomPolicy(self, pos.players[1]),
-            RandomPolicy(self, pos.players[2]),
+            BaselinePolicy(self, pos.players[0]),
+            BaselinePolicy(self, pos.players[1]),
+            BaselinePolicy(self, pos.players[2]),
         ]
 
     def play_game(self):

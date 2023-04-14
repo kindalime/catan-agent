@@ -11,12 +11,12 @@ class Player:
         self.dice = {i: empty_resources() for i in range(2, 13)}
         self.resources = empty_resources()
         self.dev_cards = empty_deck()
-        self.points = 2
+        self.points = 0
         self.army = 0
         self.settlement_supply = 5
         self.city_supply = 4
         self.color = player_colors[self.id]
-        self.longest = None
+        self.longest = 1
         self.endpoints = None
 
     def possible_init_settlements(self, pos):
