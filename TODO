@@ -8,11 +8,10 @@
 * each node as possible decision point
 * multiple threads go to the tree in parallel, backtrack all at once
 
-MCTS done by end of next week for experiments
+MCTS done by end of next week for experiment
+
+removed stealing for now. TODO: bring it back
 
 BUGS:
 * dev cards can be used the turn they are played
-
-MCTS knows the results of robber and dev cards for now
-
-check all copying and all pos/child
+* random choice for the robber is not implemented for MCTS

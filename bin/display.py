@@ -129,22 +129,22 @@ class Display:
 
     # TODO: remove_robber
 
-    def draw_colony(self, col_id, color):
+    def draw_colony(self, col_id, color, window=self.window):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 10)
+        pygame.draw.circle(window, color, coords, 10)
         pygame.display.update()
 
-    def draw_city(self, col_id, color):
+    def draw_city(self, col_id, color, window=self.window):
         coords = self.col_dict[col_id]
-        pygame.draw.circle(self.window, color, coords, 20)
+        pygame.draw.circle(window, color, coords, 20)
         pygame.display.update()
 
-    def draw_road(self, road_id, color):
+    def draw_road(self, road_id, color, window=self.window):
         coords = self.road_dict[road_id]
-        pygame.draw.line(self.window, color, coords[0], coords[1], width=10)
+        pygame.draw.line(window, color, coords[0], coords[1], width=10)
         pygame.display.update()
 
-    def draw_hex(self, hex_id):
+    def draw_hex(self, hex_id, window=self.window):
         # also doubles as robber removal - just rewrite the entire hex for now
         resource = self.board.hexes[hex_id].resource
         color_dict = {
@@ -158,7 +158,7 @@ class Display:
 
         coords = self.hex_dict[hex_id]
         hex_coords = [[coords[0] + hex_shifts[i][0]*90, coords[1] + hex_shifts[i][1]*90] for i in range(6)]
-        pygame.draw.polygon(self.window, color_dict[resource], hex_coords)
+        pygame.draw.polygon(window, color_dict[resource], hex_coords)
 
         # draw the number
         if resource != Resource.DESERT:
@@ -166,7 +166,7 @@ class Display:
             text = font.render(str(self.board.hexes[hex_id].number), True, 'black', 'white')
             rect = text.get_rect()
             rect.center = coords
-            self.window.blit(text, rect)
+            window.blit(text, rect)
         pygame.display.update()
 
     def board_init(self):

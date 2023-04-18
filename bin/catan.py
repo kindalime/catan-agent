@@ -271,6 +271,12 @@ class Catan:
         pos.robber.location = location.id
         print(f"Robber moved from {prev_location} to {location.id}.")
 
+        # self.steal_resource(pos, player_id, victim_id)
+        # move robber display
+        self.display.draw_hex(prev_location)
+        self.display.add_robber(location.id)
+
+    def steal_resource(self, pos, player_id, victim_id):
         # steal a resource
         resources = counter_to_list(pos.players[victim_id].resources)
         if resources:
@@ -280,7 +286,3 @@ class Catan:
             pos.players[victim_id].resources.subtract([stolen])
             print(f"DEBUG: Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
             print(f"DEBUG: Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")
-
-        # move robber display
-        self.display.draw_hex(prev_location)
-        self.display.add_robber(location.id)

@@ -2,41 +2,16 @@ from policy.policy import CatanPolicy
 from collections import Counter
 from resources import *
 from devcard import *
+from nodecalc import *
+from policy.random import RandomPolicy
 
 import math
 import random
 import time
 import datetime
-from enum import Enum
 
 # MCTS with NO simplifying modifications. Has full access to ALL hidden information.
 # Uses the Baseline for estimating what other players will do.
-    
-class Node:
-    def __init__(self, pos, depth=None, state=None):
-        self.views = 0
-        self.payoff = 0
-
-        if not state:
-            self.state = self.find_state()
-        else:
-            self.state = state
-
-        if not depth:
-            self.depth = pos.current_turn # TODO: change
-        else:
-            self.depth = depth
-
-    def find_state(self):
-        pass
-
-
-def mcts_policy(time):
-    """ Wrapper function that returns a class method call. """
-    def fun(state):
-        mc = MonteCarlo(time, state)
-        return mc.run_monte_carlo()
-    return fun
 
 class MonteCarlo:
     def __init__(self, runtime, state, catan, player):
@@ -45,7 +20,13 @@ class MonteCarlo:
         self.start_time = time.time()
         self.states = {self.root: Node(self.root)} # [total views, total payoff]
         self.iterations = 0
+        self.nodecalc = NodeCalc(player.id, catan)
+        self.max_chain = 5
         super().__init__(catan, player)
+
+    def calculate_payoff(self, pos):
+        total_points = 4 * pos.players[i]
+        all_points = sum([])
 
     def run_monte_carlo(self):
         """ Main function that handles the loop of iteration running and then fetches the optimal move. """
@@ -68,7 +49,7 @@ class MonteCarlo:
             chain -- the chain of states being traversed, represented as a list starting with the root.
         """ 
         chain.append(state)
-        if state.is_terminal():
+        if state.is_terminal() or self.turn_diff(chain[0], chain[-1]) >= self.max_chain:
             return state.payoff(), chain
         else:
             if self.states[state][0] == 0: # only simulate upon reaching a new node (w/o children)
@@ -84,12 +65,13 @@ class MonteCarlo:
         
             state -- the current state being expanded.
         """
-        for action in state.get_actions():
-            child = state.successor(action)
-            self.states[child] = [0, 0]
+        children = self.nodecalc.get_children(state)
+        self.states.update(children)
 
     def simulate(self, state):
         """ Simulate step of the MCTS algorithm. Plays random actions until reaching a terminal node.
+            Can use the random policy for this. Also does not necessarily reach a terminal node - in that case,
+            plays for a certain number of rounds (default 5).
 
             state -- beginning state being simulated.
         """
@@ -106,11 +88,11 @@ class MonteCarlo:
         """
 
         for state in chain:
-            self.states[state][0] += 1
-            self.states[state][1] += payoff
+            self.states[state].views += 1
+            self.states[state].payoff += payoff
 
     def get_children(self, state):
-        return [state.successor(action) for action in state.get_actions()]
+        return self.nodecalc.get_children(state, self.states[state]).keys()
 
     def select_child(self, state):
         """ Function that selects a child for a given state. Picks a random unvisited node (with 0 runs)
@@ -120,16 +102,12 @@ class MonteCarlo:
         """
 
         children = self.get_children(state)
-        unvisited = list(filter(lambda x: self.states[x][0] == 0, children))
+        unvisited = list(filter(lambda x: self.states[x].views == 0, children))
         if unvisited:
             return random.choice(unvisited)
 
-        # For player 0, max ucb: else, min ucb
         ucbs = [self.calculate_ucb(child, state) for child in children]
-        if state.actor() == 0:
-            choices = [idx for idx, value in enumerate(ucbs) if value == max(ucbs)]
-        else:
-            choices = [idx for idx, value in enumerate(ucbs) if value == min(ucbs)]
+        choices = [idx for idx, value in enumerate(ucbs) if value == max(ucbs)]
         return children[random.choice(choices)]
 
     def calculate_ucb(self, state, parent_state):
@@ -142,15 +120,12 @@ class MonteCarlo:
         if not parent_state:
             return None
 
-        parent_runs = self.states[parent_state][0]
+        parent_runs = self.states[parent_state].views
         runs, reward = self.states[state]
         if runs == 0 or parent_runs == 0:
             ucb = None
         else:
-            if parent_state.actor() == 0:
-                ucb = reward / runs + math.sqrt(2 * math.log(parent_runs) / runs)
-            else:
-                ucb = reward / runs - math.sqrt(2 * math.log(parent_runs) / runs)
+            ucb = reward / runs + math.sqrt(2 * math.log(parent_runs) / runs)
         return ucb
 
     def return_optimal(self):
@@ -159,27 +134,11 @@ class MonteCarlo:
         """
 
         children = self.get_children(self.root)
-        max_runs = max([self.states[child][0] for child in children])
+        max_runs = max([self.states[child].views for child in children])
         
         choices = []
-        for action in self.root.get_actions():
-            child = self.root.successor(action)
-            if self.states[child][0] == max_runs:
+        for child in children:
+            if self.states[child].views == max_runs:
                 choices.append(action)
         return random.choice(choices)
 
-    def print_node(self, state, depth, parent_runs):
-        if self.states[state][0] == 0:
-            string = f"New node, Player: {state.actor()}, Actions: {len(state.get_actions())}, Terminal: {state.is_terminal()}"
-            print("-" * depth + string)
-        else:
-            runs, reward = self.states[state]
-            string = f"Runs: {runs}, Reward: {reward/runs}, UCB: {self.calculate_ucb(state, None)}, Player: {state.actor()}, Actions: {len(state.get_actions())}, Terminal: {state.is_terminal()}"
-            print("-" * depth + string)
-            if not state.is_terminal():
-                for child in self.get_children(state):
-                    self.print_node(child, depth + 1, runs)
-
-    def print_tree(self):
-        print("//////////////////////////////////")
-        self.print_node(self.root, 0, 0)
