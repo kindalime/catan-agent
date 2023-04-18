@@ -6,6 +6,7 @@ class Position:
         self.robber = robber
         self.current_turn = current_turn
         self.turn_count = turn_count
+        self.gathered = False
 
         self.largest_army = 2
         self.largest_army_owner = -1
@@ -19,6 +20,9 @@ class Position:
 
         self.terminal = False
         self.winner = None
+        
+    def actor(self):
+        return self.current_turn
 
     def draw_dev_card(self):
         return self.dev_deck.draw()

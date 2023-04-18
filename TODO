@@ -1,7 +1,18 @@
-* baseline implementation
 * normal mcts test
+* robber evaluation after every card
+* road evaluation after every road?
+* mcts children - check for use of "pos"
+* mcts tests for performance
+* can write random vs baseline - wins, points, # of turns?
+* random event node: no ucb, just a random sample
+* each node as possible decision point
+* multiple threads go to the tree in parallel, backtrack all at once
 
-DFS with all endpoint roads? (roads with <2 connecting roads)
+MCTS done by end of next week for experiments
 
 BUGS:
 * dev cards can be used the turn they are played
+
+MCTS knows the results of robber and dev cards for now
+
+check all copying and all pos/child

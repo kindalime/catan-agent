@@ -76,22 +76,26 @@ class Catan:
         return pos
 
     def play_turn(self, pos):
-        pos = copy.copy(pos)
+        pos = copy.deepcopy(pos)
         print(f"VPs: {[p.points for p in pos.players]}")
 
         dice = random.randint(1, 6) + random.randint(1, 6) # roll the dice
         print(f"Player {pos.current_turn} turn. Dice roll: {dice}")
-        if dice != 7: # gather resources as usual
-            for player in pos.players:
-                player.collect_resources(pos, dice)
-        else: # robber attack!
-            self.robber_attack(pos)
+        self.gather_resources(dice)
 
         # ask policy what it wants to do for a specific player
         self.policies[pos.current_turn].take_turn(pos)
 
         self.end_of_turn(pos)
         return pos
+
+    def gather_resources(self, pos, dice):
+        if dice != 7: # gather resources as usual
+            for player in pos.players:
+                player.collect_resources(pos, dice)
+        else: # robber attack!
+            self.robber_attack(pos)
+        pos.gathered = True
 
     def end_of_turn(self, pos):
         if pos.army_calc:
@@ -112,6 +116,7 @@ class Catan:
         # increment turns
         pos.current_turn = (pos.current_turn + 1) % self.player_num
         pos.turn_count += 1
+        pos.gathered = False
 
     def robber_attack(self, pos):
         # robber attack - must ask policies for discard, and then do discards

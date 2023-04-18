@@ -14,10 +14,11 @@ class Resource(Enum):
     def random(self):
         return random.choice(list(self.__members__.values()))
 
+all_resources = [Resource.BRICK, Resource.SHEEP, Resource.STONE, Resource.WOOD, Resource.WHEAT]
+
 def resources_str(data):
     return f"Wood: {data[Resource.WOOD]}, Brick: {data[Resource.BRICK]}, Sheep: {data[Resource.SHEEP]}, Wheat: {data[Resource.WHEAT]}, Stone: {data[Resource.STONE]}"
 
-# TODO: CHANGE THIS
 def empty_resources():
     return Counter({
         Resource.WOOD: 0,
@@ -49,3 +50,14 @@ dev_card_cost = Counter({
     Resource.WHEAT: 1,
     Resource.STONE: 1,
 })
+
+def resource_check(self, resources, cost):
+    for resource in cost:
+        if cost[resource] > resources[resource]:
+            return False
+    return True
+
+def resource_gate(self, resources, cost):
+    for resource in cost:
+        if cost[resource] > resources[resource]:
+            raise NotEnoughResourcesError(self.id, resource, cost[resource], resources[resource])

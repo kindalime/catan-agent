@@ -62,6 +62,15 @@ class Player:
         # filter and return all empty roads
         return [road.id for road in pos.get_roads(roads) if road.owner == -1]
 
+    def possible_robber(self, pos):
+        combos = []
+        for h in self.pos.board.hexes:
+            players = list(h.get_players())
+            if self.id not in players and len(players) > 1:
+                for p in players:
+                    combos.append([players, h.id])
+        return combos
+
     def update_dice(self, pos, colony):
         for h in colony.hexes:
             h = pos.get_hex(h)
@@ -77,16 +86,11 @@ class Player:
             print(f"DEBUG: Robber takes: {robber_resources[self.id]}")
         print(f"DEBUG: Player {self.id} resources: {resources_str(self.resources)}")
 
-    def resource_gate(self, resources):
-        for resource in resources:
-            if resources[resource] > self.resources[resource]:
-                raise NotEnoughResourcesError(self.id, resource, resources[resource], self.resources[resource])
+    def resource_gate(self, cost):
+        resource_gate(self.resources, cost)
 
-    def resource_check(self, resources):
-        for resource in resources:
-            if resources[resource] > self.resources[resource]:
-                return False
-        return True
+    def resource_check(self, cost):
+        return resource_check(self.resources, cost)
 
     def discard_half(self, to_discard):
         to_discard = Counter(to_discard)
