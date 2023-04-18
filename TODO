@@ -15,3 +15,6 @@ removed stealing for now. TODO: bring it back
 BUGS:
 * dev cards can be used the turn they are played
 * random choice for the robber is not implemented for MCTS
+
+get actions from each node
+MCTS - disable dev cards for now

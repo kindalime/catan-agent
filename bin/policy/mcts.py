@@ -13,6 +13,45 @@ import datetime
 # MCTS with NO simplifying modifications. Has full access to ALL hidden information.
 # Uses the Baseline for estimating what other players will do.
 
+class MCTSPolicy(self, runtime, catan, player):
+    def __init__(self, catan, player, runtime):
+        super().__init__(catan, player)
+        self.runtime = runtime
+        self.init_road = None
+
+    def init_settle(self, pos):
+        mc = MonteCarlo(self.runtime, pos, self.catan, self.player)
+        optimal = mc.run_monte_carlo()
+        self.init_road = optimal[1]
+        return optimal[0]
+
+    def init_road(self, pos, settlement):
+        return self.init_road
+
+    def choose_discard(self, pos):
+        mc = MonteCarlo(self.runtime, pos, self.catan, self.player)
+        optimal = mc.run_monte_carlo()
+        return optimal.action
+
+    def choose_robber(self, pos):
+        mc = MonteCarlo(self.runtime, pos, self.catan, self.player)
+        optimal = mc.run_monte_carlo()
+        return optimal.action
+
+    def take_turn(self, pos):
+        mc = MonteCarlo(self.runtime, pos, self.catan, self.player)
+        optimal = mc.run_monte_carlo()
+        while optimal.action[0] != ["end"]:
+            match optimal.action[0]:
+                case "city":
+                    self.catan.build_city(pos, self.player, optimal.action[1])
+                case "settlement":
+                    self.catan.build_settlement(pos, self.player, optimal.action[1])
+                case "road":
+                    self.catan.build_road(pos, self.player, optimal.action[1])
+            mc = MonteCarlo(self.runtime, pos, self.catan, self.player)
+            optimal = mc.run_monte_carlo()
+
 class MonteCarlo:
     def __init__(self, runtime, state, catan, player):
         self.root = state
@@ -21,8 +60,11 @@ class MonteCarlo:
         self.states = {self.root: Node(self.root)} # [total views, total payoff]
         self.iterations = 0
         self.nodecalc = NodeCalc(player.id, catan)
-        self.max_chain = 5
+        self.max_chain = 10
         super().__init__(catan, player)
+
+    def turn_diff(before, after):
+        return (after.turn_count - before.turn_count)/len(before.players)
 
     def calculate_payoff(self, pos):
         total_points = 4 * pos.players[i]
@@ -30,7 +72,7 @@ class MonteCarlo:
 
     def run_monte_carlo(self):
         """ Main function that handles the loop of iteration running and then fetches the optimal move. """
-        while time.time() - self.start_time < self.runtime:
+        while time.time() - self.start_time < self.runtime: # seconds
             self.run_iteration()
             self.iterations += 1
         # print(f"Iteration complete. Runs: {self.iterations} Time: {datetime.datetime.now()}")
@@ -49,7 +91,7 @@ class MonteCarlo:
             chain -- the chain of states being traversed, represented as a list starting with the root.
         """ 
         chain.append(state)
-        if state.is_terminal() or self.turn_diff(chain[0], chain[-1]) >= self.max_chain:
+        if state.is_terminal() or self.turn_diff(chain[0], chain[-1]) < self.max_chain:
             return state.payoff(), chain
         else:
             if self.states[state][0] == 0: # only simulate upon reaching a new node (w/o children)
@@ -75,7 +117,8 @@ class MonteCarlo:
 
             state -- beginning state being simulated.
         """
-        while not state.is_terminal():
+        begin_state = state
+        while not state.is_terminal() and self.turn_diff(begin_state, state) < self.max_chain:
             action = random.choice(state.get_actions())
             state = state.successor(action)
         return state.payoff()
@@ -139,6 +182,6 @@ class MonteCarlo:
         choices = []
         for child in children:
             if self.states[child].views == max_runs:
-                choices.append(action)
+                choices.append(self.states[child].action)
         return random.choice(choices)
 

@@ -9,14 +9,14 @@ class State(Enum):
     BUILDING = 6
     MY_DISCARD = 7
     OTHER_DISCARD = 8
-    STEAL = 9
-    KNIGHT_STEAL = 10
+    MY_ROBBER = 9
 
 
 class Node:
     def __init__(self, pos, depth=None, state=None):
         self.views = 0
         self.payoff = 0
+        self.action = None # previous action done to get to this node.
 
         if not state:
             self.state = self.find_state()
@@ -47,7 +47,7 @@ class NodeCalc:
             else:
                 return State.OTHER_DISCARD
 
-        return State.DEV_CARD
+        return State.BUILDING
 
     def get_children(self, pos, node):
         if node.state == None:
@@ -62,8 +62,8 @@ class NodeCalc:
                 return self.my_dice(pos, node)
             case OTHER_DICE:
                 return self.other_dice(pos, node)
-            case DEV_CARD:
-                return self.dev_card(pos, node)
+            # case DEV_CARD:
+            #     return self.dev_card(pos, node)
             case BUILDING:
                 return self.building(pos, node)
             case MY_DISCARD:
@@ -77,6 +77,7 @@ class NodeCalc:
 
     def init_settle(self, pos, node):
         children = []
+        actions = []
         for settle in pos.player[self.id].possible_init_settlements(pos):
             settle_child = copy.deepcopy(pos)
             self.catan.build_init_settlement(settle_child, self.id, settle)
@@ -84,14 +85,16 @@ class NodeCalc:
                 road_child = copy.deepcopy(settle_child)
                 self.catan.build_init_road(road_child, self.id, road, settle)
                 children.append(road_child)
-        return children
+                actions.append([settle, road])
+        return children, actions
 
     def init_settle_one(self, pos, node):
-        children = self.init_settle(pos, node)
+        children, actions = self.init_settle(pos, node)
         nodes = {}
-        for child in children:
-            child_node = self.init_settle_one_play(child, node)
-            nodes[child] = child_node
+        for i in range(len(children)):
+            child_node = self.init_settle_one_play(child[i], node)
+            child_node.action = actions[i]
+            nodes[child[i]] = child_node
         return nodes
 
     def init_settle_one_play(self, pos, node):
@@ -116,11 +119,12 @@ class NodeCalc:
         return node
 
     def init_settle_two(self, pos, node):
-        children = self.init_settle(pos, node)
+        children, actions = self.init_settle(pos, node)
         nodes = {}
-        for child in children:
-            child_node = self.init_settle_two_play(child, node)
-            nodes[child] = child_node
+        for i in range(len(children)):
+            child_node = self.init_settle_two_play(child[i], node)
+            child_node.action = actions[i]
+            nodes[child[i]] = child_node
         return nodes
 
     def init_settle_two_play(self, pos, node):
@@ -139,217 +143,251 @@ class NodeCalc:
             node.state = State.OTHER_DICE
         return node
 
-    def dev_card(self, pos, node):
-        children = []
-        combos = get_all_combos(pos.players[self.id].dev_cards)
-        for combo in combos:
-            combo = Counter(combo)
+    # def dev_card(self, pos, node):
+    #     children = []
+    #     combos = get_all_combos(pos.players[self.id].dev_cards)
+    #     for combo in combos:
+    #         combo = Counter(combo)
 
-            child = copy.deepcopy(pos)
-            for i in range(len(combo[DevCard.VP])):
-                self.dev_card_vp(child)
-            new_children = [child]
+    #         child = copy.deepcopy(pos)
+    #         for i in range(len(combo[DevCard.VP])):
+    #             self.dev_card_vp(child)
+    #         new_children = [child]
 
-            for i in range(len(combo[DevCard.ROAD])):
-                new_children = merge_list([self.dev_card_road(c) for c in new_children])
+    #         for i in range(len(combo[DevCard.ROAD])):
+    #             new_children = merge_list([self.dev_card_road(c) for c in new_children])
 
-            for i in range(len(combo[DevCard.PLENTY])):
-                new_children = merge_list([self.dev_card_plenty(c) for c in new_children])
+    #         for i in range(len(combo[DevCard.PLENTY])):
+    #             new_children = merge_list([self.dev_card_plenty(c) for c in new_children])
 
-            for i in range(len(combo[DevCard.MONOPOLY])):
-                new_children = merge_list([self.dev_card_monopoly(c) for c in new_children])
+    #         for i in range(len(combo[DevCard.MONOPOLY])):
+    #             new_children = merge_list([self.dev_card_monopoly(c) for c in new_children])
 
-            for i in range(len(combo[DevCard.KNIGHT])):
-                new_children = merge_list([self.dev_card_knight(c) for c in new_children])
+    #         for i in range(len(combo[DevCard.KNIGHT])):
+    #             new_children = merge_list([self.dev_card_knight(c) for c in new_children])
 
-            children.extend(new_children)
+    #         children.extend(new_children)
 
-        nodes = {}
-        for child in children:
-            child_node = self.dev_card_children_play(pos, node)
-            nodes[child] = child_node
-        return children
+    #     nodes = {}
+    #     for child in children:
+    #         child_node = self.dev_card_children_play(pos, node)
+    #         nodes[child] = child_node
+    #     return children
 
-    def dev_card_children_play(pos, node):
-        # doesn't play anything - goes directly to building stage
-        node = copy.copy(node)
-        node.state = State.BUILDING
-        return node
+    # def dev_card_children_play(pos, node):
+    #     # doesn't play anything - goes directly to building stage
+    #     node = copy.copy(node)
+    #     node.state = State.BUILDING
+    #     return node
 
-    def dev_card_vp(self, pos):
-        self.catan.use_dev_card(pos, pos.players[self.id], DevCard.VP)
+    # def dev_card_vp(self, pos):
+    #     self.catan.use_dev_card(pos, pos.players[self.id], DevCard.VP)
 
-    def dev_card_road(self, pos): # max 2
-        # Max 2 roads. Copied from above.
-        queue = deque([pos, 0, ()])
-        visited = set()
+    # def dev_card_road(self, pos): # max 2
+    #     # Max 2 roads. Copied from above.
+    #     queue = deque([pos, 0, ()])
+    #     visited = set()
 
-        # Get all possible 2-road combinations.
-        while queue:
-            node = queue.popleft()
-            if node[2] not in visited:
-                if node[1] < 2:
-                    visited.add(node[2])
-                    possible_roads = pos.players[self.id].possible_roads(roads)
-                    for r in possible_roads:
-                        new_pos = copy.deepcopy(p)
-                        self.catan.build_road(new_pos, pos.players[self.id], r, free=True)
-                        queue.append([new_pos, node[1] + 1, node[2] + (r)])
+    #     # Get all possible 2-road combinations.
+    #     while queue:
+    #         node = queue.popleft()
+    #         if node[2] not in visited:
+    #             if node[1] < 2:
+    #                 visited.add(node[2])
+    #                 possible_roads = pos.players[self.id].possible_roads(roads)
+    #                 for r in possible_roads:
+    #                     new_pos = copy.deepcopy(p)
+    #                     self.catan.build_road(new_pos, pos.players[self.id], r, free=True)
+    #                     queue.append([new_pos, node[1] + 1, node[2] + (r)])
 
-        # Play the dev card for each combo
-        children = []
-        for c in list(visited):
-            child = copy.deepcopy(pos)
-            if len(c) == 1:
-                self.catan.use_dev_card(child, child.players[self.id], DevCard.ROAD, first=c[0], second=None)
-            elif len(c) == 2:
-                self.catan.use_dev_card(child, child.players[self.id], DevCard.ROAD, first=c[0], second=c[1])
-            children.append(child)
-        return children
+    #     # Play the dev card for each combo
+    #     children = []
+    #     for c in list(visited):
+    #         child = copy.deepcopy(pos)
+    #         if len(c) == 1:
+    #             self.catan.use_dev_card(child, child.players[self.id], DevCard.ROAD, first=c[0], second=None)
+    #         elif len(c) == 2:
+    #             self.catan.use_dev_card(child, child.players[self.id], DevCard.ROAD, first=c[0], second=c[1])
+    #         children.append(child)
+    #     return children
 
-    def dev_card_plenty(self, pos): # max 2
-        combos = itertools.combinations_with_replacement(all_resources, 2)
-        children = []
-        for c in combos:
-            child = copy.deepcopy(pos)
-            self.catan.use_dev_card(child, child.players[self.id], DevCard.PLENTY, first=c[0], second=c[1])
-            children.append(child)
-        return children
+    # def dev_card_plenty(self, pos): # max 2
+    #     combos = itertools.combinations_with_replacement(all_resources, 2)
+    #     children = []
+    #     for c in combos:
+    #         child = copy.deepcopy(pos)
+    #         self.catan.use_dev_card(child, child.players[self.id], DevCard.PLENTY, first=c[0], second=c[1])
+    #         children.append(child)
+    #     return children
 
-    def dev_card_monopoly(self, pos): # max 2
-        children = []
-        for c in all_resources:
-            child = copy.deepcopy(pos)
-            self.catan.use_dev_card(child, child.players[self.id], DevCard.MONOPOLY, first=c[0], second=c[1])
-            children.append(child)
-        return children
+    # def dev_card_monopoly(self, pos): # max 2
+    #     children = []
+    #     for c in all_resources:
+    #         child = copy.deepcopy(pos)
+    #         self.catan.use_dev_card(child, child.players[self.id], DevCard.MONOPOLY, first=c[0], second=c[1])
+    #         children.append(child)
+    #     return children
 
-    def dev_card_knight(self, pos):
-        combos = pos.players[self.id].possible_robber(pos)
-        children = []
-        for c in combos:
-            child = copy.deepcopy(pos)
-            self.catan.use_dev_card(child, child.players[self.id], DevCard.KNIGHT, victim=c[0], location=c[1])
-            children.append(child)
-        return children
+    # def dev_card_knight(self, pos):
+    #     combos = pos.players[self.id].possible_robber(pos)
+    #     children = []
+    #     for c in combos:
+    #         child = copy.deepcopy(pos)
+    #         self.catan.use_dev_card(child, child.players[self.id], DevCard.KNIGHT, victim=c[0], location=c[1])
+    #         children.append(child)
+    #     return children
+
+    # def building(self, pos, node):
+    #     building_children = []
+    #     for combo in combos:
+    #         children = [pos]
+    #         if combo["road"] > 0:
+    #             new_children = []
+    #             for child in children:
+    #                 new_children.extend(self.road_children(child, combo["road"]))
+    #             children = new_children
+
+    #         if combo["settlement"] > 0:
+    #             new_children = []
+    #             for child in children:
+    #                 new_children.extend(self.settlement_children(child, combo["settlement"]))
+    #             children = new_children
+
+    #         if combo["city"] > 0:
+    #             new_children = []
+    #             for child in children:
+    #                 new_children.extend(self.city_children(child, combo["city"]))
+    #             children = new_children
+
+    #         if combo["dev"] > 0:
+    #             for child in children:
+    #                 self.dev_children(child, combo["dev"])
+
+    #     nodes = {}
+    #     for child in children:
+    #         child_node = self.building_play(child, node)
+    #         nodes[child] = child_node
+    #     return children
 
     def building(self, pos, node):
-        combos = self.get_action_combos(pos)
-        building_children = []
-        for combo in combos:
-            children = [pos]
-            if combo["road"] > 0:
-                new_children = []
-                for child in children:
-                    new_children.extend(self.road_children(child, combo["road"]))
-                children = new_children
+        children = {}
+        if pos.player[self.id].resource_check(city_cost):
+            for city in pos.players[self.id].possible_cities(pos):
+                child = copy.deepcopy(pos)
+                new_node = copy.copy(node)
+                self.catan.build_city(child, pos.players[self.id], city)
+                new_node.action = ["city", city]
+                children[child] = new_node
 
-            if combo["settlement"] > 0:
-                new_children = []
-                for child in children:
-                    new_children.extend(self.settlement_children(child, combo["settlement"]))
-                children = new_children
-
-            if combo["city"] > 0:
-                new_children = []
-                for child in children:
-                    new_children.extend(self.city_children(child, combo["city"]))
-                children = new_children
-
-            if combo["dev"] > 0:
-                for child in children:
-                    self.dev_children(child, combo["dev"])
-
-        nodes = {}
-        for child in children:
-            child_node = self.building_play(child, node)
-            nodes[child] = child_node
-        return children
-
-    def get_action_combos(self, pos):
-        # Given our resources, what actions can we do?
-        resources = pos.players[self.id].resources.copy()
-        combos = [[resources, empty_actions()]]
-        actions = [
-            ["city", city_cost],
-            ["settlement", settlement_cost],
-            ["dev", dev_card_cost],
-            ["road", road_cost]
-        ]
+        if pos.player[self.id].resource_check(road_cost):
+            for road in pos.players[self.id].possible_roads(pos):
+                child = copy.deepcopy(pos)
+                new_node = copy.copy(node)
+                self.catan.build_road(child, pos.players[self.id], road)
+                new_node.action = ["road", road]
+                children[child] = new_node
+            
+        if pos.player[self.id].resource_check(settlement_cost):
+            for settle in pos.players[self.id].possible_settlements(pos):
+                child = copy.deepcopy(pos)
+                new_node = copy.copy(node)
+                self.catan.build_settle(child, pos.players[self.id], settle)
+                new_node.action = ["settle", settle]
+                children[child] = node
         
-        for action in actions:
-            new_combos = []
-            for combo in combos:
-                curr_resources = combo[0].copy()
-                curr_actions = combo[1].copy()
-                while resource_check(curr_resources, action[1]):
-                    curr_resources.subtract(action[1])
-                    curr_actions[actions[0]] += 1
-                    new_combos.append([curr_resources.copy(), curr_actions.copy()])
-            combos.extend(new_combos)
+        # add the node for doing nothing and ending turn
+        end_child = copy.deepcopy(pos)
+        end_node = copy.copy(node)
+        end_node.action = ["end", None]
+        self.building_play(end_state, end_node)
+        children[end_child] = end_node
+        return children
 
-        return [combo[1] for combo in combos]
 
-    def road_children(self, pos, possible):
-        children = []
-        # [pos, depth, (road IDs)]
-        queue = deque([pos, 0, ()])
-        visited = set()
+    # def get_action_combos(self, pos):
+    #     # Given our resources, what actions can we do?
+    #     resources = pos.players[self.id].resources.copy()
+    #     combos = [[resources, empty_actions()]]
+    #     actions = [
+    #         ["city", city_cost],
+    #         ["settlement", settlement_cost],
+    #         ["dev", dev_card_cost],
+    #         ["road", road_cost]
+    #     ]
+        
+    #     for action in actions:
+    #         new_combos = []
+    #         for combo in combos:
+    #             curr_resources = combo[0].copy()
+    #             curr_actions = combo[1].copy()
+    #             while resource_check(curr_resources, action[1]):
+    #                 curr_resources.subtract(action[1])
+    #                 curr_actions[actions[0]] += 1
+    #                 new_combos.append([curr_resources.copy(), curr_actions.copy()])
+    #         combos.extend(new_combos)
 
-        while queue: # Need to update roads after every road placed. BFS
-            node = queue.popleft()
-            if node[2] not in visited:
-                visited.add(node[2])
+    #     return [combo[1] for combo in combos]
+
+    # def road_children(self, pos, possible):
+    #     children = []
+    #     # [pos, depth, (road IDs)]
+    #     queue = deque([pos, 0, ()])
+    #     visited = set()
+
+    #     while queue: # Need to update roads after every road placed. BFS
+    #         node = queue.popleft()
+    #         if node[2] not in visited:
+    #             visited.add(node[2])
                 
-                if node[1] < possible:
-                    possible_roads = pos.players[self.id].possible_roads(roads)
-                    for r in possible_roads:
-                        child = copy.deepcopy(pos)
-                        self.catan.build_road(child, pos.players[self.id], r)
-                        queue.append([child, node[1] + 1, node[2] + (r)])
-                elif node[1] == possible:
-                    children.append(node[0])
+    #             if node[1] < possible:
+    #                 possible_roads = pos.players[self.id].possible_roads(roads)
+    #                 for r in possible_roads:
+    #                     child = copy.deepcopy(pos)
+    #                     self.catan.build_road(child, pos.players[self.id], r)
+    #                     queue.append([child, node[1] + 1, node[2] + (r)])
+    #             elif node[1] == possible:
+    #                 children.append(node[0])
 
-        return children
+    #     return children
 
-    def settlement_children(self, pos, possible):
-        children = []
-        # [pos, depth, (settlement IDs)]
-        queue = deque([pos, 0, ()])
-        visited = set()
+    # def settlement_children(self, pos, possible):
+    #     children = []
+    #     # [pos, depth, (settlement IDs)]
+    #     queue = deque([pos, 0, ()])
+    #     visited = set()
 
-        while queue:
-            node = queue.popleft()
-            if node[2] not in visited:
-                children.append(node[0])
-                visited.add(node[2])
+    #     while queue:
+    #         node = queue.popleft()
+    #         if node[2] not in visited:
+    #             children.append(node[0])
+    #             visited.add(node[2])
                 
-                if node[1] < possible:
-                    possible_settlements = pos.players[self.id].possible_settlements(settlements)
-                    for s in possible_settlements:
-                        child = copy.deepcopy(pos)
-                        self.catan.build_settlement(child, child.players[self.id], s)
-                        queue.append([child, node[1] + 1, node[2] + (s)])
-                elif node[1] == possible:
-                    children.append(node[0])
+    #             if node[1] < possible:
+    #                 possible_settlements = pos.players[self.id].possible_settlements(settlements)
+    #                 for s in possible_settlements:
+    #                     child = copy.deepcopy(pos)
+    #                     self.catan.build_settlement(child, child.players[self.id], s)
+    #                     queue.append([child, node[1] + 1, node[2] + (s)])
+    #             elif node[1] == possible:
+    #                 children.append(node[0])
 
-        return children
+    #     return children
 
-    def city_children(self, pos, possible):
-        actions = pos.players[self.id].possible_cities(pos)
-        combos = itertools.combinations(actions, max(len(actions), possible))
-        children = []
-        for combo in combos:
-            child = copy.deepcopy(pos)
-            for city in combo:
-                self.catan.build_city(child, child.players[self.id], c)
-        children.append(child)
-        return children
+    # def city_children(self, pos, possible):
+    #     actions = pos.players[self.id].possible_cities(pos)
+    #     combos = itertools.combinations(actions, max(len(actions), possible))
+    #     children = []
+    #     for combo in combos:
+    #         child = copy.deepcopy(pos)
+    #         for city in combo:
+    #             self.catan.build_city(child, child.players[self.id], c)
+    #     children.append(child)
+    #     return children
 
-    def dev_children(self, pos, possible):
-        for p in possible:
-            self.catan.draw_dev_card(pos, self.id)
-        return pos
+    # def dev_children(self, pos, possible):
+    #     for p in possible:
+    #         self.catan.draw_dev_card(pos, self.id)
+    #     return pos
 
     def building_play(self, pos, node):
         # After building phase, the turn is over. Next node is a random node.
@@ -373,33 +411,51 @@ class NodeCalc:
         resources = pos.players[self.id].resources
         combos = unique_combinations(resources, resources.total() // 2)
         children = []
+        discards = []
         for c in combos:
             child = copy.deepcopy(pos)
             child.players[i].discard_half(c)
             children.append(child)
-        return children
+            discards.append(c)
+        return children, discards
 
     def other_discard(self, pos, node):
-        children = self.discard(pos)
+        children, discards = self.discard(pos)
         nodes = {}
-        for child in children:
-            child_node = self.play_other_turn(child, node)
-            nodes[child] = child_node
-        return children
+        for i in range(len(children)):
+            child_node = self.play_other_turn(children[i], node)
+            nodes[children[i]] = child_node
+            nodes.action = discards[i]
+        return nodes
 
     def my_discard(self, pos, node):
-        children = self.discard(pos)
+        children, discards = self.discard(pos)
         nodes = {}
-        for child in children:
-            for robber_child in self.robber_attack(child):
-                child_node = self.my_discard_play(child, node)
-                nodes[robber_child] = child_node
-        return children
+        for i in range(len(children)):
+            child_node = self.my_discard_play(children[i], node)
+            nodes[robber_child] = child_node
+            nodes.action = discards[i]
+        return nodes
 
     def my_discard_play(pos, node):
-        # doesn't play anything - goes directly to building stage
+        # doesn't play anything - goes directly to my robber stage
         node = copy.copy(node)
-        node.state = State.DEV_CARD
+        node.state = State.MY_ROBBER
+        return node
+
+    def my_robber(self, pos, node):
+        children, actions = self.robber_children(pos)
+        nodes = {}
+        for i in range(len(children)):
+            child_node = self.my_robber_play(children[i], node)
+            nodes[robber_child] = child_node
+            nodes.action = discards[i]
+        return nodes
+
+    def my_robber_play(pos, node):
+        # doesn't play anything - goes directly to build stage
+        node = copy.copy(node)
+        node.state = State.BUILDING
         return node
 
     def other_dice(pos, node):
@@ -464,18 +520,19 @@ class NodeCalc:
                 to_discard = self.catan.policies[i].choose_discard(pos)
                 pos.players[i].discard_half(to_discard)
 
-    def robber_attack(self, pos):
-        # robber attack - must ask policies for discard, and then do discards
-        if pos.current_turn == player.id: # create new children
-            children = self.robber_children(child)
-        else:
-            # then, must ask policy what to do with the robber, and then resolve the robber
-            victim, location = self.catan.policies[pos.current_turn].choose_robber(pos)
-            self.catan.move_robber(pos, pos.current_turn, victim, location)
-        return children
+    # def robber_attack(self, pos):
+    #     # robber attack - must ask policies for discard, and then do discards
+    #     if pos.current_turn == player.id: # create new children
+    #         children = self.robber_children(child)
+    #     else:
+    #         # then, must ask policy what to do with the robber, and then resolve the robber
+    #         victim, location = self.catan.policies[pos.current_turn].choose_robber(pos)
+    #         self.catan.move_robber(pos, pos.current_turn, victim, location)
+    #     return children
 
     def robber_children(self, pos):
         children = []
+        actions = []
         for h in pos.board.hexes:
             players = h.get_players()
             if self.id in players:
@@ -485,4 +542,5 @@ class NodeCalc:
                 child = copy.deepcopy(pos)
                 self.catan.move_robber(child, pos.current_turn, p, h.id)
                 children.append(child)
-        return children
+                actions.append(p, h.id)
+        return children, actions

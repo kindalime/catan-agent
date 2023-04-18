@@ -15,6 +15,7 @@ from display import Display
 from policy.human import HumanPolicy
 from policy.random import RandomPolicy
 from policy.baseline import BaselinePolicy
+from policy.mcts import MCTSPolicy
 from time import sleep
 
 
@@ -27,9 +28,9 @@ class Catan:
     def policy_setup(self, pos):
         # TODO: change
         return [
-            BaselinePolicy(self, pos.players[0]),
-            BaselinePolicy(self, pos.players[1]),
-            BaselinePolicy(self, pos.players[2]),
+            MCTSPolicy(self, pos.players[0], 1000),
+            RandomPolicy(self, pos.players[1]),
+            RandomPolicy(self, pos.players[2]),
         ]
 
     def play_game(self):
@@ -134,8 +135,8 @@ class Catan:
     def largest_army(self, pos):
         if pos.players[pos.current_turn].army > pos.largest_army:
             if pos.largest_army_owner != -1:
-                pos.players[pos.largest_army_owner].points -= 2
-            pos.players[pos.current_turn].points += 2
+                pos.players[pos.largest_army_owner].points -= 3
+            pos.players[pos.current_turn].points += 3
             pos.largest_army_owner = pos.current_turn
             pos.largest_army = pos.players[pos.current_turn].army
             print(f"New largest army: Player {pos.current_turn} with {pos.largest_army} knights!")
