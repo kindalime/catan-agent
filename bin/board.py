@@ -1,7 +1,7 @@
 import random
 from utils import *
 from collections import defaultdict
-from resources import Resource
+from resources import Resource, pip_dict
 from errors import BuildError, UpgradeError, TooCloseError, BrokenRoadError
 
 """ Notes on this file's design:

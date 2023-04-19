@@ -56,7 +56,7 @@ class RandomPolicy(CatanPolicy):
 
     def option_settlement(self, pos):
         choices = self.player.possible_settlements(pos)
-        if choices and self.player.resource_check(settlement_cost):
+        if choices and self.player.resource_check(settlement_cost) and self.player.settlement_supply > 0:
             self.catan.build_settlement(pos, self.player, random.choice(choices))
 
     def option_city(self, pos):

@@ -21,6 +21,12 @@ class HeuristicPolicy(CatanPolicy):
         return {col.id: col.count_pips(pos) for col in cols}
 
     def init_settle(self, pos):
+        if len(self.player.colonies) == 0:
+            return self.init_settle_first(pos)
+        else:
+            return self.init_settle_second(pos)
+
+    def init_settle_first(self, pos):
         # For first initial settles, focus on wood and brick.
         # Wheat is prioritized 3rd, then sheep, and lastly stone for now.
 
@@ -39,7 +45,29 @@ class HeuristicPolicy(CatanPolicy):
                         pips += 1.25*pip_dict[h.number]
                     case Resource.STONE:
                         pips += 1*pip_dict[h.number]
-            pips[col.id] = weighted
+            weighted[col.id] = pips
+        return pick_top_three(weighted)
+
+    def init_settle_second(self, pos):
+        # For first initial settles, focus on wood and brick.
+        # Wheat is prioritized 3rd, then sheep, and lastly stone for now.
+
+        weighted = {}
+        for col in pos.get_colonies(self.player.possible_init_settlements(pos)):
+            pips = 0
+            for h in pos.get_hexes(col.hexes):
+                match h.resource:
+                    case Resource.WOOD:
+                        pips += 1.5*pip_dict[h.number]
+                    case Resource.BRICK:
+                        pips += 2.5*pip_dict[h.number]
+                    case Resource.WHEAT:
+                        pips += 2*pip_dict[h.number]
+                    case Resource.SHEEP:
+                        pips += 2*pip_dict[h.number]
+                    case Resource.STONE:
+                        pips += 1*pip_dict[h.number]
+            weighted[col.id] = pips
         return pick_top_three(weighted)
 
     def init_road(self, pos, settlement):
@@ -126,7 +154,7 @@ class HeuristicPolicy(CatanPolicy):
     def place_settlement(self, pos):
         def choose_location():
             weighted = {}
-            for col in pos.get_colonies(self.player.possible_init_settlements(pos)):
+            for col in pos.get_colonies(self.player.possible_settlements(pos)):
                 pips = 0
                 for h in pos.get_hexes(col.hexes):
                     match h.resource:
@@ -140,7 +168,7 @@ class HeuristicPolicy(CatanPolicy):
                             pips += 1*pip_dict[h.number]
                         case Resource.SHEEP:
                             pips += 1.25*pip_dict[h.number]
-                pips[col.id] = weighted
+                weighted[col.id] = pips
             return pick_top_three(weighted)
 
         self.catan.build_settlement(pos, self.player, choose_location())
@@ -164,33 +192,7 @@ class HeuristicPolicy(CatanPolicy):
             randomly choose from possible roads
         """
 
-        # find possible endpoints to extend - want to extend to vertices w/o 2+ roads to extend longest road
-        def extend_longest_road():
-            possible = []
-            for endpoint in pos.get_roads(self.player.endpoints):
-                for col in pos.get_colonies(endpoint.colonies):
-                    if col.owner in [-1, self.player.id]:
-                        possible_col = True
-                        for road in pos.get_roads(col.roads):
-                            if road.id != endpoint and road.owner == self.player.id:
-                                possible_col = False
-                                break
-                        if possible_col:
-                            possible.extend(col.roads)
-            return possible
-
-        def calculate_road():
-            if pos.longest_road_owner == self.player:
-                if random.random() < .2: # 20% check
-                    possible = extend_longest_road()
-                    if possible:
-                        return random.choice(possible)
-            elif pos.longest_road_owner != -1 and pos.longest_road == self.player.longest:
-                if random.random() < .75: # 75% check
-                    possible = extend_longest_road()
-                    if possible:
-                        return random.choice(possible)
-            
+        def calculate_road():        
             possible = []
             roads = self.player.possible_roads(pos)
             settles = set(self.player.possible_settlements(pos))
@@ -263,12 +265,6 @@ class HeuristicPolicy(CatanPolicy):
         """
         self.played_knight = False
 
-        # while it is possible to place cities, do so
-        # print("city stage")
-        # print(self.player.possible_cities(pos))
-        while self.player.resource_check(city_cost) and self.player.possible_cities(pos):
-            self.place_city(pos)
-
         # while it is possible to place settlements, do so
         # print("settlement stage")
         # print(self.player.possible_settlements(pos))
@@ -279,10 +275,13 @@ class HeuristicPolicy(CatanPolicy):
         # print("road stage")
         # print(self.player.possible_roads(pos))
         while self.player.resource_check(road_cost) and self.player.possible_roads(pos):
-            if random.random() < .9:
-                self.place_road(pos)
-            else:
-                break
+            self.place_road(pos)
+
+        # while it is possible to place cities, do so
+        # print("city stage")
+        # print(self.player.possible_cities(pos))
+        while self.player.resource_check(city_cost) and self.player.possible_cities(pos):
+            self.place_city(pos)
 
         # while it is possible to buy dev cards, do so
         # print("dev buy stage")

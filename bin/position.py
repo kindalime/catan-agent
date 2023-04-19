@@ -55,3 +55,7 @@ class Position:
         if self.players[self.current_turn].points >= 10:
             self.terminal = True
             self.winner = self.current_turn
+
+        if self.turn_count >= 1000:
+            self.terminal = True
+            self.winner = None

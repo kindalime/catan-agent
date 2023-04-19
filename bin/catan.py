@@ -27,7 +27,7 @@ class Catan:
         self.setup = setup
         self.display = None
         self.policies = None
-        self.show_display = False
+        self.show_display = show_display
 
     def policy_setup(self, pos):
         policies = []
@@ -54,7 +54,8 @@ class Catan:
         logging.info(f"Game Over! Winner: {pos.winner}")
         logging.info(f"Scores: {scores}")
         logging.debug(f"DEBUG: Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
-        # self.display.save("image.jpeg")
+        if self.show_display:
+            self.display.save("image.jpeg")
         return pos.winner, scores
 
     def init_pos(self):
@@ -146,8 +147,8 @@ class Catan:
     def largest_army(self, pos):
         if pos.players[pos.current_turn].army > pos.largest_army:
             if pos.largest_army_owner != -1:
-                pos.players[pos.largest_army_owner].points -= 3
-            pos.players[pos.current_turn].points += 3
+                pos.players[pos.largest_army_owner].points -= 2
+            pos.players[pos.current_turn].points += 2
             pos.largest_army_owner = pos.current_turn
             pos.largest_army = pos.players[pos.current_turn].army
             logging.info(f"New largest army: Player {pos.current_turn} with {pos.largest_army} knights!")
