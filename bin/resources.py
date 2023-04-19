@@ -51,13 +51,26 @@ dev_card_cost = Counter({
     Resource.STONE: 1,
 })
 
-def resource_check(self, resources, cost):
+def resource_check(resources, cost):
     for resource in cost:
         if cost[resource] > resources[resource]:
             return False
     return True
 
-def resource_gate(self, resources, cost):
+def resource_gate(resources, cost):
     for resource in cost:
         if cost[resource] > resources[resource]:
             raise NotEnoughResourcesError(self.id, resource, cost[resource], resources[resource])
+
+pip_dict = {
+    2: 1,
+    3: 2,
+    4: 3,
+    5: 4,
+    6: 5,
+    8: 5,
+    9: 4,
+    10: 3,
+    11: 2,
+    12: 1,
+}

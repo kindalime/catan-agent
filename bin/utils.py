@@ -34,8 +34,8 @@ def unique_combinations(data, size):
     combos = list(combinations(data, size))
     return set(combos)
 
-a = Counter({"a":3, "b":4, "c":2, "d":0})
-for i in unique_combinations(a, 5):
-    print(i)
+# a = Counter({"a":3, "b":4, "c":2, "d":0})
+# for i in unique_combinations(a, 5):
+#     print(i)
 
 player_colors = ["blue", "red", "green", "purple"]

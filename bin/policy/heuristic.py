@@ -9,7 +9,7 @@ def pick_top_three(data):
     choice = random.choice(data)
     return choice[0]
 
-class BaselinePolicy(CatanPolicy):
+class HeuristicPolicy(CatanPolicy):
     # taken from the "smart heuristic player" from Ashraf and Kim's project, 2018.
     # everything has been implemented except the things related to trading/harbors
 
@@ -21,80 +21,26 @@ class BaselinePolicy(CatanPolicy):
         return {col.id: col.count_pips(pos) for col in cols}
 
     def init_settle(self, pos):
-        """ Their algorithm in pseudocode:
-        
-        get all vertices (colonies) and their info
-        also, get information on resources currently controlled
+        # For first initial settles, focus on wood and brick.
+        # Wheat is prioritized 3rd, then sheep, and lastly stone for now.
 
-        if settles w/ 3 unique resources exist:
-            for every settle with 3 unique resources:
-                add up the sum of its pips
-                if this is the 2nd settle and player doesn't have stone:
-                    if this settle has stone:
-                        add 3 to pips
-            return a random choice from top 3 pip totals
-
-        if settles connected to 3 resource hexes exist:
-            return a random choice
-
-        if settles connected to 2 resource hexes and a port exist:
-            if settles where the port is 2:1 AND the player has 1+ of that resource exist:
-                candidates = those settles
-            elif settles where the port is 3:1 exist:
-                candidates = those settles
-
-            if candidates has settles where the 2 resources are different:
-                filter candidates to the above ^
-
-            filter candidates to only the ones with the highest pips
-
-            return a random choice from candidates
-
-        if settles connected to 2 resource hexes exist:
-            return a random choice
-
-        return a random choice
-        """
-        three_unique = []
-        three_resources = []
-        two_unique = []
-        two_resources = []
-        others = []
-
+        weighted = {}
         for col in pos.get_colonies(self.player.possible_init_settlements(pos)):
-            resources = col.get_resources(pos)
-            if len(resources) == 3:
-                if len(set(resources)) == 3:
-                    three_unique.append(col)
-                else:
-                    three_resources.append(col)
-            elif len(resources) == 2:
-                if len(set(resources)) == 2:
-                    two_unique.append(col)
-                else:
-                    two_resources.append(col)
-            else:
-                others.append(col)
-        
-        if three_unique:
-            pips = self.count_pips(pos, three_unique)
-            if self.player.colonies and Resource.STONE not in pos.get_colony(self.player.colonies[0]).get_resources(pos):
-                for col in three_unique:
-                    if Resource.STONE in col.get_resources(pos):
-                        pips[col.id] += 3
-            return pick_top_three(pips)
-        elif three_resources:
-            pips = self.count_pips(pos, three_resources)
-            return pick_top_three(pips)
-        elif two_unique:
-            pips = self.count_pips(pos, two_unique)
-            return pick_top_three(pips)
-        elif two_resources:
-            pips = self.count_pips(pos, two_resources)
-            return pick_top_three(pips)
-        elif others:
-            pips = self.count_pips(pos, others)
-            return pick_top_three(pips)
+            pips = 0
+            for h in pos.get_hexes(col.hexes):
+                match h.resource:
+                    case Resource.WOOD:
+                        pips += 2*pip_dict[h.number]
+                    case Resource.BRICK:
+                        pips += 2.25*pip_dict[h.number]
+                    case Resource.WHEAT:
+                        pips += 1.5*pip_dict[h.number]
+                    case Resource.SHEEP:
+                        pips += 1.25*pip_dict[h.number]
+                    case Resource.STONE:
+                        pips += 1*pip_dict[h.number]
+            pips[col.id] = weighted
+        return pick_top_three(weighted)
 
     def init_road(self, pos, settlement):
         # Same as random
@@ -111,28 +57,33 @@ class BaselinePolicy(CatanPolicy):
         to_discard = self.player.resources.total() // 2
         discard = []
 
-        # find out most common resources
-        resources = {
-            Resource.WOOD: 0,
-            Resource.BRICK: 0,
-            Resource.SHEEP: 0,
-            Resource.WHEAT: 0,
-            Resource.STONE: 0,
-        }
-        for col in pos.get_colonies(self.player.colonies):
-            for h in pos.get_hexes(col.hexes):
-                if h.resource != Resource.DESERT:
-                    resources[h.resource] += h.number
-        resources = Counter(resources).most_common()
+        curr_resources = self.player.resources.copy()
+        # If you can make a city, keep those items
+        if self.player.resource_check(city_cost):
+            curr_resources.subtract(city_cost)
+            # Edge case: can make a city, but have exactly 8 cards
+            if self.player.resources.total() == 8:
+                discard.append(Resource.WHEAT)
+
+        # Else if you can make a settlement, keep those items
+        elif self.player.resource_check(settlement_cost):
+            curr_resources.subtract(settlement_cost)
+
+        if curr_resources[Resource.STONE] + curr_resources[Resource.WHEAT] \
+            > curr_resources[Resource.WOOD] + curr_resources[Resource.BRICK]: 
+            discard_order = [Resource.SHEEP, Resource.WOOD, Resource.BRICK, Resource.WHEAT, Resource.STONE]
+        else:
+            discard_order = [Resource.SHEEP, Resource.WHEAT, Resource.STONE, Resource.WOOD, Resource.BRICK]
 
         # construct the discard list
-        for r in resources:
+        for r in discard_order:
             if len(discard) >= to_discard:
                 break
-            elif self.player.resources[r[0]] + len(discard) < to_discard:
-                discard.extend([r[0]] * self.player.resources[r[0]])
+            elif curr_resources[r] + len(discard) < to_discard:
+                discard.extend([r] * curr_resources[r])
             else:
-                discard.extend([r[0]] * (to_discard - len(discard)))
+                discard.extend([r] * (to_discard - len(discard)))
+
         return discard
 
     def choose_robber(self, pos):
@@ -173,47 +124,28 @@ class BaselinePolicy(CatanPolicy):
                 return col.owner, location
 
     def place_settlement(self, pos):
-        """ Their algorithm in psuedocode:
-
-        if settles connected to resources that the player doesn't own exist:
-            return a random choice from the above ^
-
-        return a random choice from the possible choices that have the highest pips           
-        """
-            
         def choose_location():
-            # get current resources
-            curr_resources = set()
-            for die in self.player.dice:
-                for r in Resource:
-                    if self.player.dice[die][r] > 0:
-                        curr_resources.add(r)
-            
-            possible = pos.get_colonies(self.player.possible_settlements(pos))
-
-            # do settles connected to resources that the player doesn't own exist?
-            if len(curr_resources) != 5:
-                priority = []
-                for settle in possible:
-                    for r in settle.get_resources(pos):
-                        if r not in curr_resources:
-                            priority.append(settle)
-                            break
-                if priority:
-                    pips = self.count_pips(pos, priority)
-                    return pick_top_three(pips)
-            
-            # if none of the above exist, fall back to default
-            pips = self.count_pips(pos, possible)
-            return pick_top_three(pips)
+            weighted = {}
+            for col in pos.get_colonies(self.player.possible_init_settlements(pos)):
+                pips = 0
+                for h in pos.get_hexes(col.hexes):
+                    match h.resource:
+                        case Resource.STONE:
+                            pips += 3*pip_dict[h.number]
+                        case Resource.WHEAT:
+                            pips += 2*pip_dict[h.number]
+                        case Resource.WOOD:
+                            pips += 1*pip_dict[h.number]
+                        case Resource.BRICK:
+                            pips += 1*pip_dict[h.number]
+                        case Resource.SHEEP:
+                            pips += 1.25*pip_dict[h.number]
+                pips[col.id] = weighted
+            return pick_top_three(weighted)
 
         self.catan.build_settlement(pos, self.player, choose_location())
     
     def place_city(self, pos):
-        """ Their algorithm in pseudocode:
-        
-        choose candidates at random from the ones with highest pips
-        """
         choices = pos.get_colonies(self.player.possible_cities(pos))
         pips = self.count_pips(pos, choices)
         self.catan.build_city(pos, self.player, pick_top_three(pips))

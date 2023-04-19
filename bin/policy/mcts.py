@@ -2,8 +2,8 @@ from policy.policy import CatanPolicy
 from collections import Counter
 from resources import *
 from devcard import *
-from nodecalc import *
 from policy.random import RandomPolicy
+from policy.nodecalc import *
 
 import math
 import random
@@ -13,7 +13,7 @@ import datetime
 # MCTS with NO simplifying modifications. Has full access to ALL hidden information.
 # Uses the Baseline for estimating what other players will do.
 
-class MCTSPolicy(self, runtime, catan, player):
+class MCTSPolicy:
     def __init__(self, catan, player, runtime):
         super().__init__(catan, player)
         self.runtime = runtime
@@ -60,7 +60,7 @@ class MonteCarlo:
         self.states = {self.root: Node(self.root)} # [total views, total payoff]
         self.iterations = 0
         self.nodecalc = NodeCalc(player.id, catan)
-        self.max_chain = 10
+        self.max_chain = 5
         super().__init__(catan, player)
 
     def turn_diff(before, after):

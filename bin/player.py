@@ -2,6 +2,7 @@ from resources import *
 from errors import *
 from devcard import empty_deck, play_card
 from utils import player_colors
+import logging
 
 class Player:
     def __init__(self, id):
@@ -78,13 +79,13 @@ class Player:
                 self.dice[h.number][h.resource] += 1
 
     def collect_resources(self, pos, die):
-        print(f"DEBUG: Player {self.id} collects resources: {resources_str(self.dice[die])}")
+        logging.debug(f"DEBUG: Player {self.id} collects resources: {resources_str(self.dice[die])}")
         self.resources.update(self.dice[die])
         robber_resources = pos.robber.get_resources(pos)
         if self.id in robber_resources and pos.get_hex(pos.robber.location).number == die:
             self.resources.subtract(robber_resources[self.id])
-            print(f"DEBUG: Robber takes: {robber_resources[self.id]}")
-        print(f"DEBUG: Player {self.id} resources: {resources_str(self.resources)}")
+            logging.debug(f"DEBUG: Robber takes: {robber_resources[self.id]}")
+        logging.debug(f"DEBUG: Player {self.id} resources: {resources_str(self.resources)}")
 
     def resource_gate(self, cost):
         resource_gate(self.resources, cost)
@@ -97,7 +98,7 @@ class Player:
         if self.resources.total() <= 7:
             raise DoNotDiscardError(self.id)
         if to_discard.total() != self.resources.total() // 2:
-            raise DiscardAmountWrongError(self.id, to_discard.total(), self.resources.total())
+            raise DiscardAmountWrongError(self.id, to_discard.total(), self.resources.total() // 2)
         self.resources.subtract(to_discard)
 
     def longest_road(self, pos):
@@ -124,7 +125,7 @@ class Player:
 
         def dfs_helper(pos, curr, visited_roads, visited_cols, depth):
             # get same-owner children
-            print(curr.id, visited_roads, visited_cols, depth)
+            # print(curr.id, visited_roads, visited_cols, depth)
             visited_roads.add(curr.id)
             max_depth = depth
             max_endpoint = curr.id
@@ -155,7 +156,6 @@ class Player:
 
         self.longest = max_depth
         self.endpoints = max_endpoints
-        print(f"DEPTH: {max_depth}, {max_endpoints}")
         return max_depth
         
     def print_dice(self):

@@ -2,6 +2,7 @@ import random
 from utils import *
 from enum import Enum
 from collections import Counter
+import logging
 
 class DevCard(Enum):
     NONE = 0
@@ -49,28 +50,28 @@ class DevelopmentDeck:
 ### All dev cards accept a pos and a player (NOT player_id)
 
 def vp_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays VP dev card for one points.")
+    logging.info(f"Player {player.id} plays VP dev card for one points.")
     player.points += 1
 
 def road_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays road dev card for roads {kwargs}")
+    logging.info(f"Player {player.id} plays road dev card for roads {kwargs}")
     catan.build_road(pos, player, kwargs['first'], free=True)
     if kwargs['second'] is not None:
         catan.build_road(pos, player, kwargs['second'], free=True)
 
 def knight_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays knight dev card on location {kwargs['location']} and steals from {kwargs['victim']}")
+    logging.info(f"Player {player.id} plays knight dev card on location {kwargs['location']} and steals from {kwargs['victim']}")
     catan.move_robber(pos, player.id, kwargs['victim'], kwargs['location'])
     player.army += 1
     pos.army_calc = True
 
 def plenty_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays plenty dev card for resources {kwargs['first']}, {kwargs['second']}.")
+    logging.info(f"Player {player.id} plays plenty dev card for resources {kwargs['first']}, {kwargs['second']}.")
     player.resources[kwargs['first']] += 1
     player.resources[kwargs['second']] += 1
 
 def monopoly_card(catan, pos, player, **kwargs):
-    print(f"Player {player.id} plays monopoly dev card for resource {kwargs['res']}")
+    logging.info(f"Player {player.id} plays monopoly dev card for resource {kwargs['res']}")
     for player in pos.players:
         if player.id != player:
             player.resources[kwargs['res']] += player.resources[kwargs['res']]

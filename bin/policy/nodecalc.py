@@ -54,23 +54,23 @@ class NodeCalc:
             node.state = self.find_state(pos, node)
 
         match node.state:
-            case INIT_SETTLE_ONE:
+            case State.INIT_SETTLE_ONE:
                 return self.init_settle_one(pos, node)
-            case INIT_SETTLE_TWO:
+            case State.INIT_SETTLE_TWO:
                 return self.init_settle_two(pos, node)
-            case MY_DICE:
+            case State.MY_DICE:
                 return self.my_dice(pos, node)
-            case OTHER_DICE:
+            case State.OTHER_DICE:
                 return self.other_dice(pos, node)
-            # case DEV_CARD:
+            # case State.DEV_CARD:
             #     return self.dev_card(pos, node)
-            case BUILDING:
+            case State.BUILDING:
                 return self.building(pos, node)
-            case MY_DISCARD:
+            case State.MY_DISCARD:
                 return self.my_discard(pos, node)
-            case OTHER_DISCARD:
+            case State.OTHER_DISCARD:
                 return self.other_discard(pos, node)
-            case STEAL:
+            case State.STEAL:
                 return self.steal(pos, node)
             case _:
                 raise ValueError("Bad node state!")

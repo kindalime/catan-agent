@@ -15,23 +15,32 @@ from display import Display
 from policy.human import HumanPolicy
 from policy.random import RandomPolicy
 from policy.baseline import BaselinePolicy
+from policy.heuristic import HeuristicPolicy
 from policy.mcts import MCTSPolicy
 from time import sleep
+import logging
 
 
 class Catan:
-    def __init__(self, player_num):
-        self.player_num = player_num
+    def __init__(self, setup, show_display=False):
+        self.player_num = len(setup)
+        self.setup = setup
         self.display = None
         self.policies = None
+        self.show_display = False
 
     def policy_setup(self, pos):
-        # TODO: change
-        return [
-            MCTSPolicy(self, pos.players[0], 1000),
-            RandomPolicy(self, pos.players[1]),
-            RandomPolicy(self, pos.players[2]),
-        ]
+        policies = []
+        for i in range(len(self.setup)):
+            match self.setup[i]:
+                case "h":
+                    policies.append(HeuristicPolicy(self, pos.players[i]))
+                case "b":
+                    policies.append(BaselinePolicy(self, pos.players[i]))
+                case "r":
+                    policies.append(RandomPolicy(self, pos.players[i]))
+
+        return policies
 
     def play_game(self):
         pos = self.init_pos()
@@ -41,11 +50,12 @@ class Catan:
             pos = self.play_turn(pos)
             if pos.terminal:
                 break
-        print(f"Game Over! Winner: {pos.winner}")
-        print(f"Scores: {[(i, pos.players[i].points) for i in range(self.player_num)]}")
-        print(f"DEBUG: Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
-        self.display.save("image.jpeg")
-        return pos.winner
+        scores = [(i, pos.players[i].points) for i in range(self.player_num)]
+        logging.info(f"Game Over! Winner: {pos.winner}")
+        logging.info(f"Scores: {scores}")
+        logging.debug(f"DEBUG: Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
+        # self.display.save("image.jpeg")
+        return pos.winner, scores
 
     def init_pos(self):
         players = [Player(num) for num in range(self.player_num)]
@@ -58,7 +68,8 @@ class Catan:
 
     def begin_game(self, pos):
         # initial settlement/road placing
-        self.display = Display(pos.board)
+        if self.show_display:
+            self.display = Display(pos.board)
         for i in range(self.player_num):
             curr_player = (pos.current_turn + i) % self.player_num
             col = self.policies[curr_player].init_settle(pos)
@@ -77,12 +88,12 @@ class Catan:
         return pos
 
     def play_turn(self, pos):
-        pos = copy.deepcopy(pos)
-        print(f"VPs: {[p.points for p in pos.players]}")
+        # pos = copy.deepcopy(pos)
+        logging.info(f"VPs: {[p.points for p in pos.players]}")
 
         dice = random.randint(1, 6) + random.randint(1, 6) # roll the dice
-        print(f"Player {pos.current_turn} turn. Dice roll: {dice}")
-        self.gather_resources(dice)
+        logging.info(f"Player {pos.current_turn} turn. Dice roll: {dice}")
+        self.gather_resources(pos, dice)
 
         # ask policy what it wants to do for a specific player
         self.policies[pos.current_turn].take_turn(pos)
@@ -122,11 +133,11 @@ class Catan:
     def robber_attack(self, pos):
         # robber attack - must ask policies for discard, and then do discards
         for i in range(self.player_num):
-            print(f"DEBUG: Robber attack. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+            logging.debug(f"DEBUG: Robber attack. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
             if pos.players[i].resources.total() > 7:
                 to_discard = self.policies[i].choose_discard(pos)
                 pos.players[i].discard_half(to_discard)
-                print(f"DEBUG: Cards discarded. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+                logging.debug(f"DEBUG: Cards discarded. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
         # then, must ask policy what to do with the robber, and then resolve the robber
         victim, location = self.policies[pos.current_turn].choose_robber(pos)
@@ -139,7 +150,7 @@ class Catan:
             pos.players[pos.current_turn].points += 3
             pos.largest_army_owner = pos.current_turn
             pos.largest_army = pos.players[pos.current_turn].army
-            print(f"New largest army: Player {pos.current_turn} with {pos.largest_army} knights!")
+            logging.info(f"New largest army: Player {pos.current_turn} with {pos.largest_army} knights!")
     
     def longest_road(self, pos):
         # calculate longest road for this player only
@@ -150,12 +161,12 @@ class Catan:
             pos.players[pos.current_turn].points += 2
             pos.longest_road_owner = pos.current_turn
             pos.longest_road = player_road
-            print(f"New longest road! Player {pos.current_turn} with road length {player_road}!")
+            logging.info(f"New longest road! Player {pos.current_turn} with road length {player_road}!")
 
     def longest_road_reset(self, pos):
         # calculates longest road for ALL players and resolves according to rules
         # only to be used when a settlement cuts off a road
-        print("DEBUG: Longest road reset!")
+        logging.info("DEBUG: Longest road reset!")
         if pos.longest_road_owner == -1:
             return
         
@@ -186,15 +197,17 @@ class Catan:
             for resource in pos.get_colony(id).get_resources(pos):
                 player.resources[resource] += 1 
 
-        self.display.draw_colony(id, player.color)
-        print(f"DEBUG: Init settlement built in {id} for Player {player.id}.")
+        if self.show_display:
+            self.display.draw_colony(id, player.color)
+        logging.debug(f"DEBUG: Init settlement built in {id} for Player {player.id}.")
 
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
         player.roads.append(id)
 
-        self.display.draw_road(id, player.color)
-        print(f"DEBUG: Init road built in {id} for Player {player.id}.")
+        if self.show_display:
+            self.display.draw_road(id, player.color)
+        logging.debug(f"DEBUG: Init road built in {id} for Player {player.id}.")
 
     def build_road(self, pos, player, id, free=False):
         if not free:
@@ -205,8 +218,9 @@ class Catan:
         player.roads.append(id)
         pos.road_calc = True
 
-        self.display.draw_road(id, player.color)
-        print(f"DEBUG: Road built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        if self.show_display:
+            self.display.draw_road(id, player.color)
+        logging.debug(f"DEBUG: Road built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_settlement(self, pos, player, id):
         player.resource_gate(settlement_cost)
@@ -229,8 +243,9 @@ class Catan:
         if most_common[1] >= 2 and most_common[0] != player.id:
             pos.road_reset = True
         
-        self.display.draw_colony(id, player.color)
-        print(f"DEBUG: Settlement built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        if self.show_display:
+            self.display.draw_colony(id, player.color)
+        logging.debug(f"DEBUG: Settlement built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_city(self, pos, player, id):
         player.resource_gate(city_cost)
@@ -246,15 +261,16 @@ class Catan:
         player.city_supply -= 1
         player.points += 1
 
-        self.display.draw_city(id, player.color)
-        print(f"DEBUG: City built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        if self.show_display:
+            self.display.draw_city(id, player.color)
+        logging.debug(f"DEBUG: City built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def draw_dev_card(self, pos, player):
         player.resource_gate(dev_card_cost)
         card = pos.draw_dev_card()
         player.resources.subtract(dev_card_cost)
         player.dev_cards[card] += 1
-        print(f"DEBUG: Dev card {DevCard(card).name} drawn. Player {player.id} resources: {resources_str(player.resources)}")
+        logging.debug(f"DEBUG: Dev card {DevCard(card).name} drawn. Player {player.id} resources: {resources_str(player.resources)}")
 
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:
@@ -262,7 +278,7 @@ class Catan:
         play_card(self, pos, player, card, **kwargs)
         player.dev_cards[card] -= 1
         for i in range(self.player_num):
-            print(f"DEBUG: Dev card used. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+            logging.debug(f"DEBUG: Dev card used. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location
@@ -270,20 +286,21 @@ class Catan:
         if victim_id == player_id or victim_id not in location.get_players(pos):
             raise CannotStealError(player_id, victim_id, location.id)
         pos.robber.location = location.id
-        print(f"Robber moved from {prev_location} to {location.id}.")
+        logging.info(f"Robber moved from {prev_location} to {location.id}.")
 
-        # self.steal_resource(pos, player_id, victim_id)
+        self.steal_resource(pos, player_id, victim_id)
         # move robber display
-        self.display.draw_hex(prev_location)
-        self.display.add_robber(location.id)
+        if self.show_display:
+            self.display.draw_hex(prev_location)
+            self.display.add_robber(location.id)
 
     def steal_resource(self, pos, player_id, victim_id):
         # steal a resource
         resources = counter_to_list(pos.players[victim_id].resources)
         if resources:
             stolen = random.choice(resources)
-            print(f"DEBUG: Resource stolen from player {victim_id}: {stolen}")
+            logging.debug(f"DEBUG: Resource stolen from player {victim_id}: {stolen}")
             pos.players[player_id].resources.update([stolen])
             pos.players[victim_id].resources.subtract([stolen])
-            print(f"DEBUG: Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
-            print(f"DEBUG: Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")
+            logging.debug(f"DEBUG: Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
+            logging.debug(f"DEBUG: Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")

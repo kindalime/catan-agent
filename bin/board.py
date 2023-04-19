@@ -98,7 +98,7 @@ class Colony:
         return [pos.get_hex(h).resource for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT]
 
     def count_pips(self, pos):
-        return sum([pos.get_hex(h).number for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT])
+        return sum([pip_dict[pos.get_hex(h).number] for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT])
 
 class Hex:
     curr_id = 0
