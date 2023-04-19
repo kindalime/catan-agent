@@ -14,10 +14,8 @@ from errors import BuildError, UpgradeError, TooCloseError, BrokenRoadError
 """
 
 class Road:
-    curr_id = 0
-    def __init__(self):
-        self.id = Road.curr_id
-        Road.curr_id += 1
+    def __init__(self, id):
+        self.id = id
         self.owner = -1 # nobody owns this
         self.colonies = []
     
@@ -41,10 +39,8 @@ class Road:
         self.owner = player
 
 class Colony:
-    curr_id = 0
-    def __init__(self):
-        self.id = Colony.curr_id
-        Colony.curr_id += 1
+    def __init__(self, id):
+        self.id = id
         self.owner = -1
         self.roads = []
         self.hexes = []
@@ -101,10 +97,8 @@ class Colony:
         return sum([pip_dict[pos.get_hex(h).number] for h in self.hexes if pos.get_hex(h).resource != Resource.DESERT])
 
 class Hex:
-    curr_id = 0
-    def __init__(self, resource, number):
-        self.id = Hex.curr_id
-        Hex.curr_id += 1
+    def __init__(self, id, resource, number):
+        self.id = id
         self.resource = resource
         self.number = number
         self.colonies = []
@@ -141,7 +135,7 @@ class Board:
         self.init_roads()
 
     def create_colony(self, *hexes):
-        col = Colony()
+        col = Colony(len(self.colonies))
         self.colonies.append(col)
         col.add_hexes(*hexes)
         hexes = [self.hexes[h] for h in hexes]
@@ -149,7 +143,7 @@ class Board:
             h.add_colonies([col.id])
 
     def create_road(self, *colonies):
-        road = Road()
+        road = Road(len(self.roads))
         self.roads.append(road)
         road.add_colonies(colonies)
         colonies = [self.colonies[c] for c in colonies]
@@ -173,7 +167,7 @@ class Board:
         dice_values.append(7)
         resource_values.append(Resource.DESERT)
 
-        return [Hex(resource_values[i], dice_values[i]) for i in range(19)]
+        return [Hex(i, resource_values[i], dice_values[i]) for i in range(19)]
 
     def init_colonies(self):
         # Outer Ring

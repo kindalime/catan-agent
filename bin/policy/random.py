@@ -15,12 +15,14 @@ class Option(Enum):
 
 class RandomPolicy(CatanPolicy):
     def init_settle(self, pos):
+        possible = self.player.possible_init_settlements(pos)
+        return random.choice(possible)
         # Find any unowned, valid settle spot
-        while True:
-            spot = random.randrange(54)
-            if pos.get_colony(spot).owner == -1 and pos.get_colony(spot).check_proximity(pos):
-                break
-        return spot
+        # while True:
+        #     spot = random.randrange(54)
+        #     if pos.get_colony(spot).owner == -1 and pos.get_colony(spot).check_proximity(pos):
+        #         break
+        # return spot
 
     def init_road(self, pos, settlement):
         # Find any possible road connected to that spot
@@ -61,7 +63,7 @@ class RandomPolicy(CatanPolicy):
 
     def option_city(self, pos):
         choices = self.player.possible_cities(pos)
-        if choices and self.player.resource_check(city_cost):
+        if choices and self.player.resource_check(city_cost) and self.player.city_supply > 0:
             self.catan.build_city(pos, self.player, random.choice(choices))
 
     def option_road(self, pos):

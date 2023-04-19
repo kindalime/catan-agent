@@ -96,19 +96,19 @@ class HeuristicPolicy(CatanPolicy):
         get a {resource: total_pips} dict
         discard resources starting from the ones with the most pips
         """
-        to_discard = self.player.resources.total() // 2
+        to_discard = pos.players[self.player.id].resources.total() // 2
         discard = []
 
-        curr_resources = self.player.resources.copy()
+        curr_resources = pos.players[self.player.id].resources.copy()
         # If you can make a city, keep those items
-        if self.player.resource_check(city_cost):
+        if pos.players[self.player.id].resource_check(city_cost):
             curr_resources.subtract(city_cost)
             # Edge case: can make a city, but have exactly 8 cards
-            if self.player.resources.total() == 8:
+            if pos.players[self.player.id].resources.total() == 8:
                 discard.append(Resource.WHEAT)
 
         # Else if you can make a settlement, keep those items
-        elif self.player.resource_check(settlement_cost):
+        elif pos.players[self.player.id].resource_check(settlement_cost):
             curr_resources.subtract(settlement_cost)
 
         if curr_resources[Resource.STONE] + curr_resources[Resource.WHEAT] \
@@ -297,7 +297,7 @@ class HeuristicPolicy(CatanPolicy):
         # while it is possible to place cities, do so
         # print("city stage")
         # print(self.player.possible_cities(pos))
-        while self.player.resource_check(city_cost) and self.player.possible_cities(pos):
+        while self.player.resource_check(city_cost) and self.player.possible_cities(pos) and self.player.city_supply > 0:
             self.place_city(pos)
 
         # while it is possible to buy dev cards, do so

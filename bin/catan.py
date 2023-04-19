@@ -53,7 +53,7 @@ class Catan:
         scores = [(i, pos.players[i].points) for i in range(self.player_num)]
         logging.info(f"Game Over! Winner: {pos.winner}")
         logging.info(f"Scores: {scores}")
-        logging.debug(f"DEBUG: Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
+        logging.debug(f"Longest Road: {[(pos.players[i].longest, pos.players[i].endpoints) for i in range(self.player_num)]}")
         if self.show_display:
             self.display.save("image.jpeg")
         return pos.winner, scores
@@ -134,11 +134,11 @@ class Catan:
     def robber_attack(self, pos):
         # robber attack - must ask policies for discard, and then do discards
         for i in range(self.player_num):
-            logging.debug(f"DEBUG: Robber attack. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+            logging.debug(f"Robber attack. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
             if pos.players[i].resources.total() > 7:
                 to_discard = self.policies[i].choose_discard(pos)
                 pos.players[i].discard_half(to_discard)
-                logging.debug(f"DEBUG: Cards discarded. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+                logging.debug(f"Cards discarded. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
         # then, must ask policy what to do with the robber, and then resolve the robber
         victim, location = self.policies[pos.current_turn].choose_robber(pos)
@@ -167,7 +167,7 @@ class Catan:
     def longest_road_reset(self, pos):
         # calculates longest road for ALL players and resolves according to rules
         # only to be used when a settlement cuts off a road
-        logging.info("DEBUG: Longest road reset!")
+        logging.info("Longest road reset!")
         if pos.longest_road_owner == -1:
             return
         
@@ -200,7 +200,7 @@ class Catan:
 
         if self.show_display:
             self.display.draw_colony(id, player.color)
-        logging.debug(f"DEBUG: Init settlement built in {id} for Player {player.id}.")
+        logging.debug(f"Init settlement built in {id} for Player {player.id}.")
 
     def build_init_road(self, pos, player, id, settlement):
         pos.get_road(id).initial_build(pos, player.id, settlement, id)
@@ -208,7 +208,7 @@ class Catan:
 
         if self.show_display:
             self.display.draw_road(id, player.color)
-        logging.debug(f"DEBUG: Init road built in {id} for Player {player.id}.")
+        logging.debug(f"Init road built in {id} for Player {player.id}.")
 
     def build_road(self, pos, player, id, free=False):
         if not free:
@@ -221,7 +221,7 @@ class Catan:
 
         if self.show_display:
             self.display.draw_road(id, player.color)
-        logging.debug(f"DEBUG: Road built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        logging.debug(f"Road built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_settlement(self, pos, player, id):
         player.resource_gate(settlement_cost)
@@ -246,7 +246,7 @@ class Catan:
         
         if self.show_display:
             self.display.draw_colony(id, player.color)
-        logging.debug(f"DEBUG: Settlement built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        logging.debug(f"Settlement built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def build_city(self, pos, player, id):
         player.resource_gate(city_cost)
@@ -264,14 +264,14 @@ class Catan:
 
         if self.show_display:
             self.display.draw_city(id, player.color)
-        logging.debug(f"DEBUG: City built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
+        logging.debug(f"City built in {id}. Player {player.id} resources: {resources_str(player.resources)}")
 
     def draw_dev_card(self, pos, player):
         player.resource_gate(dev_card_cost)
         card = pos.draw_dev_card()
         player.resources.subtract(dev_card_cost)
         player.dev_cards[card] += 1
-        logging.debug(f"DEBUG: Dev card {DevCard(card).name} drawn. Player {player.id} resources: {resources_str(player.resources)}")
+        logging.debug(f"Dev card {DevCard(card).name} drawn. Player {player.id} resources: {resources_str(player.resources)}")
 
     def use_dev_card(self, pos, player, card, **kwargs):
         if player.dev_cards[card] <= 0:
@@ -279,7 +279,7 @@ class Catan:
         play_card(self, pos, player, card, **kwargs)
         player.dev_cards[card] -= 1
         for i in range(self.player_num):
-            logging.debug(f"DEBUG: Dev card used. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
+            logging.debug(f"Dev card used. Player {pos.players[i].id} resources: {resources_str(pos.players[i].resources)}")
 
     def move_robber(self, pos, player_id, victim_id, location):
         prev_location = pos.robber.location
@@ -300,8 +300,8 @@ class Catan:
         resources = counter_to_list(pos.players[victim_id].resources)
         if resources:
             stolen = random.choice(resources)
-            logging.debug(f"DEBUG: Resource stolen from player {victim_id}: {stolen}")
+            logging.debug(f"Resource stolen from player {victim_id}: {stolen}")
             pos.players[player_id].resources.update([stolen])
             pos.players[victim_id].resources.subtract([stolen])
-            logging.debug(f"DEBUG: Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
-            logging.debug(f"DEBUG: Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")
+            logging.debug(f"Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
+            logging.debug(f"Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")

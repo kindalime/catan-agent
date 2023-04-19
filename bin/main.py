@@ -7,6 +7,7 @@ logging.basicConfig(filename="log.log",
                     datefmt='%H:%M:%S',
                     level=logging.DEBUG)
 
-game = Catan(["h", "r", "r"], show_display=True)
-winner, scores = game.play_game()
-print(winner, scores)
+for i in range(100):
+    game = Catan(["h", "r", "r"])
+    winner, scores = game.play_game()
+    print(winner, scores)

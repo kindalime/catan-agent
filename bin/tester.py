@@ -4,11 +4,14 @@ from multiprocessing import Pool
 from functools import partial
 
 def one_test(setup, i):
-    setup = setup.copy()
-    shuffle(setup)
-    c = Catan(setup)
-    winner, points = c.play_game()
-    return winner, points
+    try:
+        setup = setup.copy()
+        shuffle(setup)
+        c = Catan(setup)
+        winner, points = c.play_game()
+        return winner, points
+    except:
+        return None, None
 
 class Tester:
     def test_setup(self, setup, num):

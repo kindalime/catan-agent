@@ -79,13 +79,13 @@ class Player:
                 self.dice[h.number][h.resource] += 1
 
     def collect_resources(self, pos, die):
-        logging.debug(f"DEBUG: Player {self.id} collects resources: {resources_str(self.dice[die])}")
+        logging.debug(f"Player {self.id} collects resources: {resources_str(self.dice[die])}")
         self.resources.update(self.dice[die])
         robber_resources = pos.robber.get_resources(pos)
         if self.id in robber_resources and pos.get_hex(pos.robber.location).number == die:
             self.resources.subtract(robber_resources[self.id])
-            logging.debug(f"DEBUG: Robber takes: {robber_resources[self.id]}")
-        logging.debug(f"DEBUG: Player {self.id} resources: {resources_str(self.resources)}")
+            logging.debug(f"Robber takes: {robber_resources[self.id]}")
+        logging.debug(f"Player {self.id} resources: {resources_str(self.resources)}")
 
     def resource_gate(self, cost):
         resource_gate(self.resources, cost)
