@@ -36,11 +36,11 @@ class HeuristicPolicy(CatanPolicy):
             for h in pos.get_hexes(col.hexes):
                 match h.resource:
                     case Resource.WOOD:
-                        pips += 2*pip_dict[h.number]
-                    case Resource.BRICK:
                         pips += 2.25*pip_dict[h.number]
+                    case Resource.BRICK:
+                        pips += 2.5*pip_dict[h.number]
                     case Resource.WHEAT:
-                        pips += 1.5*pip_dict[h.number]
+                        pips += 1.25*pip_dict[h.number]
                     case Resource.SHEEP:
                         pips += 1.25*pip_dict[h.number]
                     case Resource.STONE:
@@ -52,21 +52,35 @@ class HeuristicPolicy(CatanPolicy):
         # For first initial settles, focus on wood and brick.
         # Wheat is prioritized 3rd, then sheep, and lastly stone for now.
 
+        curr_resources = pos.get_colony(self.player.colonies[0]).get_resources(pos)
+
         weighted = {}
         for col in pos.get_colonies(self.player.possible_init_settlements(pos)):
             pips = 0
             for h in pos.get_hexes(col.hexes):
                 match h.resource:
                     case Resource.WOOD:
-                        pips += 1.5*pip_dict[h.number]
+                        if Resource.WOOD not in curr_resources:
+                            pips += 3*pip_dict[h.number]
+                        else:
+                            pips += 1*pip_dict[h.number]
                     case Resource.BRICK:
-                        pips += 2.5*pip_dict[h.number]
+                        if Resource.BRICK not in curr_resources:
+                            pips += 3*pip_dict[h.number]
+                        else:
+                            pips += 1*pip_dict[h.number]
                     case Resource.WHEAT:
-                        pips += 2*pip_dict[h.number]
+                        if Resource.WHEAT not in curr_resources:
+                            pips += 3*pip_dict[h.number]
+                        else:
+                            pips += 1.5*pip_dict[h.number]
                     case Resource.SHEEP:
-                        pips += 2*pip_dict[h.number]
+                        if Resource.SHEEP not in curr_resources:
+                            pips += 3*pip_dict[h.number]
+                        else:
+                            pips += 1*pip_dict[h.number]
                     case Resource.STONE:
-                        pips += 1*pip_dict[h.number]
+                        pips += 1.5*pip_dict[h.number]
             weighted[col.id] = pips
         return pick_top_three(weighted)
 
@@ -111,6 +125,9 @@ class HeuristicPolicy(CatanPolicy):
                 discard.extend([r] * curr_resources[r])
             else:
                 discard.extend([r] * (to_discard - len(discard)))
+
+        if len(discard) != to_discard:
+            discard.append(Resource.WHEAT)
 
         return discard
 
