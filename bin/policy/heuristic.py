@@ -10,9 +10,6 @@ def pick_top_three(data):
     return choice[0]
 
 class HeuristicPolicy(CatanPolicy):
-    # taken from the "smart heuristic player" from Ashraf and Kim's project, 2018.
-    # everything has been implemented except the things related to trading/harbors
-
     def __init__(self, catan, player):
         super().__init__(catan, player)
         self.played_knight = False
@@ -36,13 +33,13 @@ class HeuristicPolicy(CatanPolicy):
             for h in pos.get_hexes(col.hexes):
                 match h.resource:
                     case Resource.WOOD:
-                        pips += 2.25*pip_dict[h.number]
+                        pips += 2.5*pip_dict[h.number]
                     case Resource.BRICK:
                         pips += 2.5*pip_dict[h.number]
                     case Resource.WHEAT:
-                        pips += 1.25*pip_dict[h.number]
+                        pips += 2*pip_dict[h.number]
                     case Resource.SHEEP:
-                        pips += 1.25*pip_dict[h.number]
+                        pips += 2*pip_dict[h.number]
                     case Resource.STONE:
                         pips += 1*pip_dict[h.number]
             weighted[col.id] = pips
@@ -73,7 +70,7 @@ class HeuristicPolicy(CatanPolicy):
                         if Resource.WHEAT not in curr_resources:
                             pips += 3*pip_dict[h.number]
                         else:
-                            pips += 1.5*pip_dict[h.number]
+                            pips += 1.25*pip_dict[h.number]
                     case Resource.SHEEP:
                         if Resource.SHEEP not in curr_resources:
                             pips += 3*pip_dict[h.number]
@@ -184,7 +181,7 @@ class HeuristicPolicy(CatanPolicy):
                         case Resource.BRICK:
                             pips += 1*pip_dict[h.number]
                         case Resource.SHEEP:
-                            pips += 1.25*pip_dict[h.number]
+                            pips += 1*pip_dict[h.number]
                 weighted[col.id] = pips
             return pick_top_three(weighted)
 

@@ -8,6 +8,6 @@ logging.basicConfig(filename="log.log",
                     level=logging.DEBUG)
 
 for i in range(100):
-    game = Catan(["h", "r", "r"])
+    game = Catan(["h", "b", "r"])
     winner, scores = game.play_game()
     print(winner, scores)

@@ -334,7 +334,7 @@ class BaselinePolicy(CatanPolicy):
         # while it is possible to place cities, do so
         # print("city stage")
         # print(self.player.possible_cities(pos))
-        while self.player.resource_check(city_cost) and self.player.possible_cities(pos):
+        while self.player.resource_check(city_cost) and self.player.possible_cities(pos) and self.player.city_supply > 0:
             self.place_city(pos)
 
         # while it is possible to place settlements, do so

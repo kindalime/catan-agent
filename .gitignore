@@ -1,2 +1,5 @@
 pysettlers/
 __pycache__/
+*.png
+*.txt
+*.log
