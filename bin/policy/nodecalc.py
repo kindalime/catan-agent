@@ -17,11 +17,7 @@ class Node:
         self.views = 0
         self.payoff = 0
         self.action = None # previous action done to get to this node.
-
-        if not state:
-            self.state = self.find_state()
-        else:
-            self.state = state
+        self.state = state
 
         if not depth:
             self.depth = pos.current_turn # TODO: change
@@ -34,7 +30,7 @@ class NodeCalc:
         self.id = id # can't use for any state variables!
         self.catan = catan
 
-    def find_state(self, node):
+    def find_state(self, pos, node):
         if len(pos.players[self.id].colonies) == 0:
             return State.INIT_SETTLE_ONE
 

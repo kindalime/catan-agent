@@ -13,7 +13,7 @@ import datetime
 # MCTS with NO simplifying modifications. Has full access to ALL hidden information.
 # Uses the Baseline for estimating what other players will do.
 
-class MCTSPolicy:
+class MCTSPolicy(CatanPolicy):
     def __init__(self, catan, player, runtime):
         super().__init__(catan, player)
         self.runtime = runtime
@@ -57,18 +57,20 @@ class MonteCarlo:
         self.root = state
         self.runtime = runtime
         self.start_time = time.time()
-        self.states = {self.root: Node(self.root)} # [total views, total payoff]
         self.iterations = 0
         self.nodecalc = NodeCalc(player.id, catan)
+        self.states = {self.root: Node(self.root)} # [total views, total payoff]
+        self.states[self.root].state = self.nodecalc.find_state(self.root, self.states[self.root])
         self.max_chain = 5
-        super().__init__(catan, player)
 
-    def turn_diff(before, after):
+    def turn_diff(self, before, after):
         return (after.turn_count - before.turn_count)/len(before.players)
 
     def calculate_payoff(self, pos):
-        total_points = 4 * pos.players[i]
-        all_points = sum([])
+        # TODO
+        # total_points = 4 * pos.players[i]
+        # all_points = sum([])
+        return 5
 
     def run_monte_carlo(self):
         """ Main function that handles the loop of iteration running and then fetches the optimal move. """
@@ -91,8 +93,8 @@ class MonteCarlo:
             chain -- the chain of states being traversed, represented as a list starting with the root.
         """ 
         chain.append(state)
-        if state.is_terminal() or self.turn_diff(chain[0], chain[-1]) < self.max_chain:
-            return state.payoff(), chain
+        if state.check_terminal() or self.turn_diff(chain[0], chain[-1]) < self.max_chain:
+            return self.calculate_payoff(state), chain
         else:
             if self.states[state][0] == 0: # only simulate upon reaching a new node (w/o children)
                 self.expand(state)
@@ -118,10 +120,10 @@ class MonteCarlo:
             state -- beginning state being simulated.
         """
         begin_state = state
-        while not state.is_terminal() and self.turn_diff(begin_state, state) < self.max_chain:
-            action = random.choice(state.get_actions())
-            state = state.successor(action)
-        return state.payoff()
+        while not state.check_terminal() and self.turn_diff(begin_state, state) < self.max_chain:
+            children = self.nodecalc.get_children(state)
+            state = random.choice(children)
+        return self.calculate_payoff(state)
 
     def update(self, payoff, chain):
         """ Update step of the MCTS algorithm. Updates states with the given payoff.
@@ -184,4 +186,3 @@ class MonteCarlo:
             if self.states[child].views == max_runs:
                 choices.append(self.states[child].action)
         return random.choice(choices)
-

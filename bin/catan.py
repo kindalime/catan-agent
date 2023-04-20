@@ -39,6 +39,8 @@ class Catan:
                     policies.append(BaselinePolicy(self, pos.players[i]))
                 case "r":
                     policies.append(RandomPolicy(self, pos.players[i]))
+                case "m":
+                    policies.append(MCTSPolicy(self, pos.players[i], 1000))
 
         return policies
 
