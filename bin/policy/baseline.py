@@ -11,7 +11,6 @@ def pick_top_three(data):
 
 class BaselinePolicy(CatanPolicy):
     # taken from the "smart heuristic player" from Ashraf and Kim's project, 2018.
-    # everything has been implemented except the things related to trading/harbors
 
     def __init__(self, catan, player):
         super().__init__(catan, player)
@@ -57,6 +56,8 @@ class BaselinePolicy(CatanPolicy):
         """
         three_unique = []
         three_resources = []
+        two_good_port = []
+        two_generic_port = []
         two_unique = []
         two_resources = []
         others = []
@@ -69,7 +70,16 @@ class BaselinePolicy(CatanPolicy):
                 else:
                     three_resources.append(col)
             elif len(resources) == 2:
-                if len(set(resources)) == 2:
+                # get all resources
+                total_resources = resources.copy()
+                if self.player.colonies:
+                    total_resources.extend(pos.get_colony(self.player.colonies[0]).get_resources(pos))
+                    
+                if col.harbor_resource in total_resources:
+                    two_good_port.append(col)
+                elif col.harbor_resource == Resource.DESERT:
+                    two_generic_port.append(col)
+                elif len(set(resources)) == 2:
                     two_unique.append(col)
                 else:
                     two_resources.append(col)
@@ -85,6 +95,12 @@ class BaselinePolicy(CatanPolicy):
             return pick_top_three(pips)
         elif three_resources:
             pips = self.count_pips(pos, three_resources)
+            return pick_top_three(pips)
+        elif two_good_port:
+            pips = self.count_pips(pos, two_good_port)
+            return pick_top_three(pips)
+        elif two_generic_port:
+            pips = self.count_pips(pos, two_generic_port)
             return pick_top_three(pips)
         elif two_unique:
             pips = self.count_pips(pos, two_unique)
@@ -319,6 +335,48 @@ class BaselinePolicy(CatanPolicy):
                     elif len(choices) != 0:
                         self.catan.use_dev_card(pos, self.player, DevCard.ROAD, first=choices[0], second=choices[1])
 
+    def trade_focus(self, pos, cost):
+        if resource_check(self.player.resources, cost):
+            return None
+
+        needed = cost.copy()
+        needed.subtract(self.player.resources)
+
+        # find give resource
+        for give in all_resources:
+            if give not in cost:
+                while self.player.resources[give] >= self.player.trade[give]:
+                    # find receive resource
+                    still_needed = False
+                    for receive in cost:
+                        if needed[receive] > 0:
+                            self.catan.trade_resource(pos, self.player, give, receive)
+                            needed[receive] -= 1
+                            still_needed = True
+                            break
+                    if not still_needed:
+                        return
+
+
+    def trades(self, pos):
+        """ Their algorithm in pseudocode:
+        prioritize trading for the following in order:
+        * nothing (20%)
+        * cities (50%)
+        * settlements (60%) 
+        * dev cards and roads
+        """
+        if random.random() < .2:
+            pass
+        elif random.random() < .5:
+            self.trade_focus(pos, city_cost)
+        elif random.random() < .6:
+            self.trade_focus(pos, settlement_cost)
+        elif random.random() < .5:
+            self.trade_focus(pos, dev_card_cost)
+        else:
+            self.trade_focus(pos, road_cost)
+
     def take_turn(self, pos):
         """ Their algorithm in pseudocode:
         prioritize the following in order:
@@ -360,3 +418,6 @@ class BaselinePolicy(CatanPolicy):
         # while it is possible to play dev cards, do so
         # print("dev play stage")
         self.play_dev(pos)
+
+        # if you can do any trades, do them
+        self.trades(pos)

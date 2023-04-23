@@ -1,7 +1,7 @@
 import random
 from utils import *
 from collections import defaultdict
-from resources import Resource, pip_dict
+from resources import Resource, pip_dict, all_resources
 from errors import BuildError, UpgradeError, TooCloseError, BrokenRoadError
 
 """ Notes on this file's design:
@@ -45,12 +45,18 @@ class Colony:
         self.roads = []
         self.hexes = []
         self.city = False
+        self.harbor = None
+        self.harbor_resource = None
     
     def add_roads(self, *roads):
         self.roads.extend(roads)
 
     def add_hexes(self, *hexes):
         self.hexes.extend(hexes)
+
+    def add_harbor(self, harbor, resource):
+        self.harbor = harbor
+        self.harbor_resource = resource
 
     def check_proximity(self, pos):
         for road in pos.get_roads(self.roads):
@@ -126,13 +132,25 @@ class Hex:
                 players.add(col.owner)
         return players
 
+class Harbor:
+    def __init__(self, id, resource):
+        self.id = id
+        self.colonies = []
+        self.resource = resource
+        # Resource.DESERT is a stand-in for 3:1 harbors
+
+    def add_colonies(self, colonies):
+        self.colonies.extend(colonies)
+
 class Board:
     def __init__(self):
         self.hexes = self.init_hexes()
         self.colonies = []
         self.roads = []
+        self.harbors = []
         self.init_colonies()
         self.init_roads()
+        self.init_harbors()
 
     def create_colony(self, *hexes):
         col = Colony(len(self.colonies))
@@ -149,6 +167,12 @@ class Board:
         colonies = [self.colonies[c] for c in colonies]
         for c in colonies:
             c.add_roads(road.id)
+
+    def create_harbor(self, colonies, resource):
+        harbor = Harbor(len(self.harbors), resource)
+        harbor.add_colonies(colonies)
+        for c in colonies:
+            self.colonies[c].add_harbor(harbor.id, resource)
 
     def init_hexes(self):
         dice_values = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
@@ -226,3 +250,22 @@ class Board:
         for i in range(48, 53):
             self.create_road(i, i+1)
         self.create_road(53, 48)
+
+    def init_harbors(self):
+        harbor_pairs = [
+            [0, 1],
+            [3, 4],
+            [7, 8],
+            [10, 11],
+            [13, 14],
+            [17, 18],
+            [20, 21],
+            [23, 24],
+            [27, 28],
+        ]
+
+        resources = all_resources.copy()
+        resources.extend([Resource.DESERT, Resource.DESERT, Resource.DESERT, Resource.DESERT])
+        random.shuffle(resources)
+        for p in range(len(harbor_pairs)):
+            self.create_harbor(harbor_pairs[p], resources[p])

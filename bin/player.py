@@ -19,6 +19,13 @@ class Player:
         self.color = player_colors[self.id]
         self.longest = 1
         self.endpoints = None
+        self.trade = {
+            Resource.BRICK: 4,
+            Resource.WOOD: 4,
+            Resource.SHEEP: 4,
+            Resource.WHEAT: 4,
+            Resource.STONE: 4,
+        }
 
     def possible_init_settlements(self, pos):
         # loop through *all* settlements and get valid placements
@@ -77,6 +84,14 @@ class Player:
             h = pos.get_hex(h)
             if h.resource != Resource.DESERT:
                 self.dice[h.number][h.resource] += 1
+
+    def update_trade(self, pos, colony):
+        if colony.harbor_resource:
+            if colony.harbor_resource == Resource.DESERT:
+                for r in self.trade:
+                    self.trade[r] = min(self.trade[r], 3)
+            else:
+                self.trade[colony.harbor_resource] = 2
 
     def collect_resources(self, pos, die):
         logging.debug(f"Player {self.id} collects resources: {resources_str(self.dice[die])}")

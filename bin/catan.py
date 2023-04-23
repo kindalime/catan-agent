@@ -194,6 +194,7 @@ class Catan:
         player.colonies.append(id)
         player.points += 1
         player.update_dice(pos, pos.get_colony(id))
+        player.update_trade(pos, pos.get_colony(id))
         
         # collect resources, but only on the second settle
         if len(player.colonies) == 2:
@@ -235,6 +236,7 @@ class Catan:
         colony.build(pos, player.id)
         player.colonies.append(id)
         player.update_dice(pos, colony)
+        player.update_trade(pos, colony)
 
         player.settlement_supply -= 1
         player.points += 1
@@ -307,3 +309,10 @@ class Catan:
             pos.players[victim_id].resources.subtract([stolen])
             logging.debug(f"Player {pos.players[player_id].id} resources: {resources_str(pos.players[player_id].resources)}")
             logging.debug(f"Player {pos.players[victim_id].id} resources: {resources_str(pos.players[victim_id].resources)}")
+
+    def trade_resource(self, pos, player, give, receive):
+        if player.trade[give] > player.resources[give]:
+            raise ValueError(f"Player {player.id} cannot trade {player.trade[give]} {give}!")
+        player.resources[give] -= player.trade[give]
+        player.resources[receive] += 1
+        logging.debug(f"Player {player.id} traded {player.trade[give]} {give} for 1 {receive}!")
