@@ -7,7 +7,14 @@ logging.basicConfig(filename="log.log",
                     datefmt='%H:%M:%S',
                     level=logging.DEBUG)
 
+baseline_dict = {
+    "stone_importance": 3,
+    "extend_longest_weight": 1,
+    "tie_longest_weight": 1,
+    "knight_play_weight": .5
+}
+
 for i in range(100):
-    game = Catan(["b", "h", "r"])
+    game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]])
     winner, scores = game.play_game()
     print(winner, scores)

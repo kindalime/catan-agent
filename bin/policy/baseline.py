@@ -12,9 +12,13 @@ def pick_top_three(data):
 class BaselinePolicy(CatanPolicy):
     # taken from the "smart heuristic player" from Ashraf and Kim's project, 2018.
 
-    def __init__(self, catan, player):
+    def __init__(self, catan, player, kwargs):
         super().__init__(catan, player)
         self.played_knight = False
+        self.stone_importance = kwargs.get("stone_importance", 3) # int
+        self.extend_longest_weight = kwargs.get("extend_longest_weight", .2)
+        self.tie_longest_weight = kwargs.get("tie_longest_weight", .75)
+        self.knight_play_weight = kwargs.get("knight_play_weight", .9)
 
     def count_pips(self, pos, cols):
         return {col.id: col.count_pips(pos) for col in cols}
@@ -91,7 +95,7 @@ class BaselinePolicy(CatanPolicy):
             if self.player.colonies and Resource.STONE not in pos.get_colony(self.player.colonies[0]).get_resources(pos):
                 for col in three_unique:
                     if Resource.STONE in col.get_resources(pos):
-                        pips[col.id] += 3
+                        pips[col.id] += self.stone_importance
             return pick_top_three(pips)
         elif three_resources:
             pips = self.count_pips(pos, three_resources)
@@ -265,12 +269,12 @@ class BaselinePolicy(CatanPolicy):
 
         def calculate_road():
             if pos.longest_road_owner == self.player:
-                if random.random() < .2: # 20% check
+                if random.random() < self.extend_longest_weight: # 20% check
                     possible = extend_longest_road()
                     if possible:
                         return random.choice(possible)
             elif pos.longest_road_owner != -1 and pos.longest_road == self.player.longest:
-                if random.random() < .75: # 75% check
+                if random.random() < self.tie_longest_weight: # 75% check
                     possible = extend_longest_road()
                     if possible:
                         return random.choice(possible)
@@ -312,7 +316,7 @@ class BaselinePolicy(CatanPolicy):
 
         # Knight Card
         if not self.played_knight and pos.largest_army_owner != self.player.id:
-            if self.player.dev_cards[DevCard.KNIGHT] > 0 and random.random() < .9:
+            if self.player.dev_cards[DevCard.KNIGHT] > 0 and random.random() < self.knight_play_weight:
                 self.played_knight = True
                 victim, location = self.choose_robber(pos)
                 self.catan.use_dev_card(pos, self.player, DevCard.KNIGHT, location=location, victim=victim)

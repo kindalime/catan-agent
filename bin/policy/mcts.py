@@ -92,6 +92,7 @@ class MonteCarlo:
             state -- the current state being traversed.
             chain -- the chain of states being traversed, represented as a list starting with the root.
         """ 
+        print("traverse begin")
         chain.append(state)
         if state.check_terminal() or self.turn_diff(chain[0], chain[-1]) < self.max_chain:
             return self.calculate_payoff(state), chain
@@ -109,6 +110,7 @@ class MonteCarlo:
         
             state -- the current state being expanded.
         """
+        print("expand begin")
         children = self.nodecalc.get_children(state)
         self.states.update(children)
 
@@ -119,6 +121,7 @@ class MonteCarlo:
 
             state -- beginning state being simulated.
         """
+        print("simulate begin")
         begin_state = state
         while not state.check_terminal() and self.turn_diff(begin_state, state) < self.max_chain:
             children = self.nodecalc.get_children(state)
@@ -131,12 +134,13 @@ class MonteCarlo:
             payoff -- payoff of the terminal node reached at the end of traverse/simulate. 
             chain -- the chain of states being updated, represented as a list starting with the root.
         """
-
+        print("update begin")
         for state in chain:
             self.states[state].views += 1
             self.states[state].payoff += payoff
 
     def get_children(self, state):
+        print("get_children begin")
         return self.nodecalc.get_children(state, self.states[state]).keys()
 
     def select_child(self, state):
@@ -145,7 +149,7 @@ class MonteCarlo:
 
             state -- state that we are selecting the most optimal child for.
         """
-
+        print("select_child begin")
         children = self.get_children(state)
         unvisited = list(filter(lambda x: self.states[x].views == 0, children))
         if unvisited:
@@ -161,7 +165,7 @@ class MonteCarlo:
             state -- child state that we are generating the UCB for.
             parent_state -- parent state to the above.
         """
-
+        print("calculate_ucb begin")
         if not parent_state:
             return None
 
@@ -177,7 +181,7 @@ class MonteCarlo:
         """ Function that returns the optimal child at the end of the algorithm by choosing
             which child of the root node was the most visited.
         """
-
+        print("return_optimal begin")
         children = self.get_children(self.root)
         max_runs = max([self.states[child].views for child in children])
         

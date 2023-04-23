@@ -23,8 +23,8 @@ import logging
 
 class Catan:
     def __init__(self, setup, show_display=False):
-        self.player_num = len(setup)
-        self.setup = setup
+        self.setup, self.setup_args = setup
+        self.player_num = len(self.setup)
         self.display = None
         self.policies = None
         self.show_display = show_display
@@ -36,7 +36,7 @@ class Catan:
                 case "h":
                     policies.append(HeuristicPolicy(self, pos.players[i]))
                 case "b":
-                    policies.append(BaselinePolicy(self, pos.players[i]))
+                    policies.append(BaselinePolicy(self, pos.players[i], self.setup_args[i]))
                 case "r":
                     policies.append(RandomPolicy(self, pos.players[i]))
                 case "m":

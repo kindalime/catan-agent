@@ -267,6 +267,34 @@ class HeuristicPolicy(CatanPolicy):
                     elif len(choices) != 0:
                         self.catan.use_dev_card(pos, self.player, DevCard.ROAD, first=choices[0], second=choices[1])
 
+    def trade_focus(self, pos, cost):
+        if resource_check(self.player.resources, cost):
+            return None
+
+        needed = cost.copy()
+        needed.subtract(self.player.resources)
+
+        # find give resource
+        for give in all_resources:
+            if give not in cost:
+                while self.player.resources[give] >= self.player.trade[give]:
+                    # find receive resource
+                    still_needed = False
+                    for receive in cost:
+                        if needed[receive] > 0:
+                            self.catan.trade_resource(pos, self.player, give, receive)
+                            needed[receive] -= 1
+                            still_needed = True
+                            break
+                    if not still_needed:
+                        return
+
+    def trades(self, pos):
+        if self.player.resources[Resource.STONE] >= 2 and self.player.resources[Resource.WHEAT] >= 1:
+            self.trade_focus(pos, city_cost)
+        else:
+            self.trade_focus(pos, settlement_cost)
+
     def take_turn(self, pos):
         """ Their algorithm in pseudocode:
         prioritize the following in order:
@@ -305,3 +333,6 @@ class HeuristicPolicy(CatanPolicy):
         # while it is possible to play dev cards, do so
         # print("dev play stage")
         self.play_dev(pos)
+
+        # if you can do any trades, do them
+        self.trades(pos)

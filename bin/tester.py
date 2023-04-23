@@ -9,15 +9,17 @@ import matplotlib.pyplot as plt
 
 def one_test(setup, i):
     try:
-        setup = setup.copy()
-        shuffle(setup)
         c = Catan(setup)
         winner, points = c.play_game()
         return setup, winner, points
-    except:
+    except Exception as e:
+        # print(repr(e))
         return None, None, None
 
 class Tester:
+    def __init__(self, names):
+        self.names = names
+
     def test_setup(self, setup, num):
         single = partial(one_test, setup)
 
@@ -27,65 +29,64 @@ class Tester:
         self.parse_results(vals)
 
     def parse_results(self, vals):
-        winners = {"h": 0, "b": 0, "r": 0}
-        random_winner = {"b": [], "h": []}
-        heuristic_winner = {"b": [], "r": []}
-        baseline_winner = {"h": [], "r": []}
+        winners = {0: 0, 1: 0, 2: 0}
+        zero_winner = {1: [], 2: []}
+        one_winner = {0: [], 2: []}
+        two_winner = {0: [], 1: []}
         for v in vals:
             setup, winner, points = v
-            if winner:
-                winner = setup[winner]
-
+            print(setup, winner, points)
+            if winner is not None:
                 match winner:
-                    case "h":
-                        winners["h"] += 1
-                        heuristic_winner["b"].append(points[setup.index("b")][1])
-                        heuristic_winner["r"].append(points[setup.index("r")][1])
-                    case "b":
-                        winners["b"] += 1
-                        baseline_winner["h"].append(points[setup.index("h")][1])
-                        baseline_winner["r"].append(points[setup.index("r")][1])
-                    case "r":
-                        winners["r"] += 1
-                        random_winner["b"].append(points[setup.index("b")][1])
-                        random_winner["h"].append(points[setup.index("h")][1])
+                    case 0:
+                        winners[0] += 1
+                        zero_winner[1].append(points[1][1])
+                        zero_winner[2].append(points[2][1])
+                    case 1:
+                        winners[1] += 1
+                        one_winner[0].append(points[0][1])
+                        one_winner[2].append(points[2][1])
+                    case 2:
+                        winners[2] += 1
+                        two_winner[0].append(points[0][1])
+                        two_winner[1].append(points[1][1])
 
         print(winners)
-        print("Heuristic Winner")
-        print(f"Baseline: mean {mean(heuristic_winner['b'])} std {stdev(heuristic_winner['b'])}")
-        print(f"Random: mean {mean(heuristic_winner['r'])} std {stdev(heuristic_winner['r'])}")
-        print("Baseline Winner")
-        print(f"Heuristic: mean {mean(baseline_winner['h'])} std {stdev(baseline_winner['h'])}")
-        print(f"Random: mean {mean(baseline_winner['r'])} std {stdev(baseline_winner['r'])}")
-        print("Random Winner")
-        print(f"Heuristic: mean {mean(random_winner['h'])} std {stdev(random_winner['h'])}")
-        print(f"Baseline: mean {mean(random_winner['b'])} std {stdev(random_winner['b'])}")
-        self.make_graphs(winners, random_winner, heuristic_winner, baseline_winner)
+        print(f"{self.names[0]} Winner")
+        print(f"{self.names[1]}: mean {mean(zero_winner[1])} std {stdev(zero_winner[1])}")
+        print(f"{self.names[2]}: mean {mean(zero_winner[2])} std {stdev(zero_winner[2])}")
+        print(f"{self.names[1]} Winner")
+        print(f"{self.names[0]}: mean {mean(one_winner[0])} std {stdev(one_winner[0])}")
+        print(f"{self.names[2]}: mean {mean(one_winner[2])} std {stdev(one_winner[2])}")
+        print(f"{self.names[2]} Winner")
+        print(f"{self.names[0]}: mean {mean(two_winner[0])} std {stdev(two_winner[0])}")
+        print(f"{self.names[1]}: mean {mean(two_winner[1])} std {stdev(two_winner[1])}")
+        self.make_graphs(winners, two_winner, one_winner, zero_winner)
 
-    def make_graphs(self, winners, random_winner, heuristic_winner, baseline_winner):
+    def make_graphs(self, winners, two_winner, one_winner, zero_winner):
         data = [
-            baseline_winner['h'],
-            baseline_winner['r'],
-            heuristic_winner['b'],
-            heuristic_winner['r'],
-            random_winner['h'],
-            random_winner['b'],
+            zero_winner[1],
+            zero_winner[2],
+            one_winner[0],
+            one_winner[2],
+            two_winner[0],
+            two_winner[1],
         ]
         names = [
-            "Heuristic Score on Baseline Victory",
-            "Random Score on Baseline Victory",
-            "Baseline Score on Heuristic Victory",
-            "Random Score on Heuristic Victory",
-            "Heuristic Score on Random Victory",
-            "Baseline Score on Random Victory",
+            f"{self.names[1]} Score on {self.names[0]} Victory",
+            f"{self.names[2]} Score on {self.names[0]} Victory",
+            f"{self.names[0]} Score on {self.names[1]} Victory",
+            f"{self.names[2]} Score on {self.names[1]} Victory",
+            f"{self.names[0]} Score on {self.names[2]} Victory",
+            f"{self.names[1]} Score on {self.names[2]} Victory",
         ]
         files = [
-            "hscore_bvic.png",
-            "rscore_bvic.png",
-            "bscore_hvic.png",
-            "rscore_hvic.png",
-            "hscore_rvic.png",
-            "bscore_rvic.png",
+            f"{self.names[1]}_score_{self.names[0]}_vic.png",
+            f"{self.names[1]}_score_{self.names[0]}_vic.png",
+            f"{self.names[0]}_score_{self.names[1]}_vic.png",
+            f"{self.names[2]}_score_{self.names[1]}_vic.png",
+            f"{self.names[0]}_score_{self.names[2]}_vic.png",
+            f"{self.names[1]}_score_{self.names[2]}_vic.png",
         ]
 
         for i in range(len(names)):
@@ -98,5 +99,14 @@ class Tester:
             plt.subplots_adjust(left=0.15)
             plt.savefig(files[i])
 
-t = Tester()
-t.test_setup(["h", "b", "r"], 10000)
+t = Tester(["Baseline", "Heuristic", "Random"])
+setup_zero = {
+
+}
+setup_one = {
+
+}
+setup_two = {
+
+}
+t.test_setup([["b", "h", "r"], [setup_zero, setup_one, setup_two]], 1000)
