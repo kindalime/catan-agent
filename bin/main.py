@@ -14,7 +14,9 @@ baseline_dict = {
     "knight_play_weight": .5
 }
 
-for i in range(100):
-    game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]])
-    winner, scores = game.play_game()
-    print(winner, scores)
+# for i in range(100):
+#     game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]])
+#     winner, scores = game.play_game()
+#     print(winner, scores)
+game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]], show_display=True)
+winner, scores = game.play_game()
