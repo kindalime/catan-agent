@@ -59,9 +59,10 @@ class MonteCarlo:
         self.start_time = time.time()
         self.iterations = 0
         self.nodecalc = NodeCalc(player.id, catan)
-        self.states = {self.root: Node(self.root)} # [total views, total payoff]
+        self.states = {self.root: Node(self.root)} # {pos: node}
         self.states[self.root].state = self.nodecalc.find_state(self.root, self.states[self.root])
         self.max_chain = 5
+        self.children = {}
 
     def turn_diff(self, before, after):
         return (after.turn_count - before.turn_count)/len(before.players)
@@ -82,6 +83,7 @@ class MonteCarlo:
         return self.return_optimal()
 
     def run_iteration(self):
+        print("run start")
         payoff, chain = self.traverse(self.root, [])
         self.update(payoff, chain)
 
@@ -94,10 +96,11 @@ class MonteCarlo:
         """ 
         print("traverse begin")
         chain.append(state)
-        if state.check_terminal() or self.turn_diff(chain[0], chain[-1]) < self.max_chain:
+        if state.check_terminal() or self.turn_diff(chain[0], chain[-1]) >= self.max_chain:
             return self.calculate_payoff(state), chain
         else:
-            if self.states[state][0] == 0: # only simulate upon reaching a new node (w/o children)
+            print(self.states[state])
+            if self.states[state].views == 0: # only simulate upon reaching a new node (w/o children)
                 self.expand(state)
                 return self.simulate(state), chain
             else:
@@ -110,8 +113,8 @@ class MonteCarlo:
         
             state -- the current state being expanded.
         """
-        print("expand begin")
-        children = self.nodecalc.get_children(state)
+        print(f"expand begin")
+        children = self.get_children(state)
         self.states.update(children)
 
     def simulate(self, state):
@@ -123,8 +126,8 @@ class MonteCarlo:
         """
         print("simulate begin")
         begin_state = state
-        while not state.check_terminal() and self.turn_diff(begin_state, state) < self.max_chain:
-            children = self.nodecalc.get_children(state)
+        while not state.check_terminal() and self.turn_diff(begin_state, state) >= self.max_chain:
+            children = self.get_children(state).keys()
             state = random.choice(children)
         return self.calculate_payoff(state)
 
@@ -141,7 +144,10 @@ class MonteCarlo:
 
     def get_children(self, state):
         print("get_children begin")
-        return self.nodecalc.get_children(state, self.states[state]).keys()
+        if state not in self.children:
+            children = self.nodecalc.get_children(state, self.states[state])
+            self.children[state] = children
+        return self.children[state]
 
     def select_child(self, state):
         """ Function that selects a child for a given state. Picks a random unvisited node (with 0 runs)
@@ -150,7 +156,7 @@ class MonteCarlo:
             state -- state that we are selecting the most optimal child for.
         """
         print("select_child begin")
-        children = self.get_children(state)
+        children = self.get_children(state).keys()
         unvisited = list(filter(lambda x: self.states[x].views == 0, children))
         if unvisited:
             return random.choice(unvisited)
@@ -182,7 +188,7 @@ class MonteCarlo:
             which child of the root node was the most visited.
         """
         print("return_optimal begin")
-        children = self.get_children(self.root)
+        children = self.get_children(self.root).keys()
         max_runs = max([self.states[child].views for child in children])
         
         choices = []

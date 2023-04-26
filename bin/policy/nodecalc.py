@@ -1,3 +1,6 @@
+import copy
+from resources import *
+from utils import *
 from enum import Enum
 
 class State(Enum):
@@ -24,11 +27,16 @@ class Node:
         else:
             self.depth = depth
 
+    def __str__(self):
+        return f"Node with {self.views} views, {self.payoff} payoff, {self.state} state, {self.depth} depth."
 
 class NodeCalc:
     def __init__(self, id, catan):
         self.id = id # can't use for any state variables!
         self.catan = catan
+
+    def get_player(self, pos):
+        return pos.players[self.id]
 
     def find_state(self, pos, node):
         if len(pos.players[self.id].colonies) == 0:
@@ -74,12 +82,12 @@ class NodeCalc:
     def init_settle(self, pos, node):
         children = []
         actions = []
-        for settle in pos.player[self.id].possible_init_settlements(pos):
+        for settle in self.get_player(pos).possible_init_settlements(pos):
             settle_child = copy.deepcopy(pos)
-            self.catan.build_init_settlement(settle_child, self.id, settle)
-            for road in settle_child.player[self.id].possible_init_roads(settle_child, settle):
+            self.catan.build_init_settlement(settle_child, self.get_player(pos), settle)
+            for road in settle_child.players[self.id].possible_init_roads(settle_child, settle):
                 road_child = copy.deepcopy(settle_child)
-                self.catan.build_init_road(road_child, self.id, road, settle)
+                self.catan.build_init_road(road_child, settle_child.players[self.id], road, settle)
                 children.append(road_child)
                 actions.append([settle, road])
         return children, actions
@@ -88,9 +96,9 @@ class NodeCalc:
         children, actions = self.init_settle(pos, node)
         nodes = {}
         for i in range(len(children)):
-            child_node = self.init_settle_one_play(child[i], node)
+            child_node = self.init_settle_one_play(children[i], node)
             child_node.action = actions[i]
-            nodes[child[i]] = child_node
+            nodes[children[i]] = child_node
         return nodes
 
     def init_settle_one_play(self, pos, node):
@@ -102,7 +110,7 @@ class NodeCalc:
             road = self.catan.policies[curr_player].init_road(pos, col)
             self.catan.build_init_road(pos, pos.players[curr_player], road, col)
 
-        for i in range(self.player_num-1, self.id-1, -1):
+        for i in range(self.catan.player_num-1, self.id-1, -1):
             curr_player = (pos.current_turn + i) % self.catan.player_num
             col = self.catan.policies[curr_player].init_settle(pos)
             self.catan.build_init_settlement(pos, pos.players[curr_player], col)
@@ -118,9 +126,9 @@ class NodeCalc:
         children, actions = self.init_settle(pos, node)
         nodes = {}
         for i in range(len(children)):
-            child_node = self.init_settle_two_play(child[i], node)
+            child_node = self.init_settle_two_play(children[i], node)
             child_node.action = actions[i]
-            nodes[child[i]] = child_node
+            nodes[children[i]] = child_node
         return nodes
 
     def init_settle_two_play(self, pos, node):
@@ -267,7 +275,7 @@ class NodeCalc:
 
     def building(self, pos, node):
         children = {}
-        if pos.player[self.id].resource_check(city_cost):
+        if pos.players[self.id].resource_check(city_cost):
             for city in pos.players[self.id].possible_cities(pos):
                 child = copy.deepcopy(pos)
                 new_node = copy.copy(node)
@@ -275,7 +283,7 @@ class NodeCalc:
                 new_node.action = ["city", city]
                 children[child] = new_node
 
-        if pos.player[self.id].resource_check(road_cost):
+        if pos.players[self.id].resource_check(road_cost):
             for road in pos.players[self.id].possible_roads(pos):
                 child = copy.deepcopy(pos)
                 new_node = copy.copy(node)
@@ -283,7 +291,7 @@ class NodeCalc:
                 new_node.action = ["road", road]
                 children[child] = new_node
             
-        if pos.player[self.id].resource_check(settlement_cost):
+        if pos.players[self.id].resource_check(settlement_cost):
             for settle in pos.players[self.id].possible_settlements(pos):
                 child = copy.deepcopy(pos)
                 new_node = copy.copy(node)
@@ -410,7 +418,7 @@ class NodeCalc:
         discards = []
         for c in combos:
             child = copy.deepcopy(pos)
-            child.players[i].discard_half(c)
+            child.players[self.id].discard_half(c)
             children.append(child)
             discards.append(c)
         return children, discards
@@ -458,15 +466,15 @@ class NodeCalc:
         nodes = {}
         pos.gathered = True
 
-        for i in range(2, 13):
+        for dice in range(2, 13):
             child = copy.deepcopy(pos)
             if dice != 7: 
                 # gather resources as usual
-                for player in pos.players:
+                for player in child.players:
                     player.collect_resources(child, dice)
                 # play the turn
                 child_node = self.play_other_turn(child, node)
-                child_node.dice = i
+                child_node.dice = dice
                 nodes[child] = child_node
 
         # Dice = 7
@@ -485,16 +493,16 @@ class NodeCalc:
         nodes = {}
         pos.gathered = True
 
-        for i in range(2, 13):
+        for dice in range(2, 13):
             child = copy.deepcopy(pos)
             if dice != 7: 
                 # gather resources as usual
-                for player in pos.players:
+                for player in child.players:
                     player.collect_resources(child, dice)
                 # set to dev
                 child_node = copy.copy(node)
-                child_node.state = DEV_CARD
-                child_node.dice = i
+                child_node.state = BUILDING
+                child_node.dice = dice
                 nodes[child] = child_node
 
         # Dice = 7

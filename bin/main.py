@@ -18,5 +18,5 @@ baseline_dict = {
 #     game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]])
 #     winner, scores = game.play_game()
 #     print(winner, scores)
-game = Catan([["b", "h", "r"], [baseline_dict, {}, {}]], show_display=True)
+game = Catan([["b", "h", "m"], [baseline_dict, {}, {}]], show_display=False)
 winner, scores = game.play_game()
