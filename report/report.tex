@@ -11,6 +11,10 @@
 \usepackage{memhfixc} 
 \usepackage{pdfsync}  
 \usepackage{fancyhdr}
+\usepackage{caption}
+\captionsetup{justification=centering}
+\usepackage{subcaption}
+\graphicspath{ {./images/} }
 
 \title{CPSC 490 Project Report}
 \author{Daniel Kim\\{Advisor: Prof. James Glenn}}
@@ -20,7 +24,9 @@
 \maketitle
 
 \section{Abstract}
-pass
+This paper attempts to optimize a set of simplistic heuristics for the board game Settlers of Catan, in an attempt to create an agent that distills the complexity of a 
+
+the work done here provides a framework for future explorations of heuristic-based algorithms for computer games.
 
 \section{Game Description}
 
@@ -35,45 +41,162 @@ Settlers of Catan is a three or four-player turn-based stochastic/Markov game wi
 	\item Development Cards, which can contain a variety of useful effects, such as stealing all of one particular resource from every other player or allowing the player to instantly place two roads without paying the normal cost for them. They cost one sheep, wheat, and stone.
 \end{itemize}
 
-\noindent If players roll a 7, instead of gathering resources, the robber is activated. The player who rolled a 7 can place the robber on any hex in the game; afterwards, that player can choose another player with a settlement/city connected to that hex and steal one resource from their hand at random, after which the building phase continues as normal. The "soldier" development card, which can be activated on one's turn, also has the same effect of the robber.
+\noindent If players roll a 7, instead of gathering resources, the robber is activated. First, every player with 8 or more resource cards must discard half of them, rounding down. Then, the player who rolled a 7 can place the robber on any hex in the game; afterwards, that player can choose another player with a settlement/city connected to that hex and steal one resource from their hand at random, after which the building phase continues as normal. The "soldier" development card, which can be activated on one's turn, also has the same effect of the robber, minus the card-discard portion.
+\\ \\
+\noindent Many of the colonies on the outskirts of the game board are connected to harbors, which facilitate easier trading for resource. Initially, players are able to trade 4 of any resource to the bank for 1 of any other resource, but harbors are able to make this more efficient. There are two types of harbors: resource harbors and general harbors (denoted with a "?" on the game board). Resource harbors change the exchange rate for that resource to a 2:1 ratio, meaning that you can exchange 2 of that resource for 1 of any other resource. General harbors change all resource exchange rates to 3:1.
 \\ \\
 \noindent The aim of the game is to earn a total of 10 Victory Points ("VPs"); settlements are worth 1 VP, cities 2 VPs, having the longest road (at least a length of 5) 2 VPs, and having the largest army (made up of soldiers gained from drawing development cards, with at least a size of 3) 2 VPs. Players are initially given two settlements and a road for each of them, and play does not stop until a player achieves the 10 VP goalpost.
 \\ \\
-\noindent harbors and trading here
+\noindent Note that inter-player trading was removed from this implementation as a major simplification to the game, as including it would introduce a level of complexity unconducive to the creation of working agents and the completion of the project.
 
-\section{Project Design}
 
-When considering creating an agent for Catan, there are a couple things of note. Given that Catan is potentially infinite (for example, if players continuously roll 7s or numbers not connected to any player's city or settlement), attempting to create a complete tree of the game is infeasible. Regardless of that fact, the branching factor and the depth of a given game's possible moves is sufficiently large that creating a full minimax tree would take a enourmous amount of time anyway, so we must choose a method of creating computational intelligence that can work with a limited tree depth while also producing workable results in the context of the game.
-\\ \\ 
-\noindent The random nature of the game must also be considered; any intelligence must utilize an algorithm that takes that randomness into consideration; successfully gauging the likelihood of gathering a particular resource on a hexagon, as not all hexagons are of equal value, is essentially to the creation of a sufficiently powerful agent. Additionally, not all resources have equal value, and the value of said resources constantly shifts over the course of the game. For example, wood and brick are essential in the early game when the creation of roads is important for reaching good settlement spots before one's opponent, while stone is not as useful. However, once many settlements have been created, stone and wheat become paramount in order to upgrade settlements into cities.
+\section{Previous Work}
+Catan is a very popular game among board game enthusiasts, so it is not surprising that multiple different projects and papers have analyzed the game using multiple different methods. One of the earliest was Thomas's JSettlers, a real-time, Java-based implementation of Settlers of Catan based off of a plan-based heuristic method (2003). JSettlers and its various updates and upgrades have become a sort of gold standard for Catan, being used in other studies as a benchmark for their own agents.
 \\ \\
-\noindent Of course, given the popularity of Catan, I am not the first person to analyze this game in the context of computational intelligence, not even at Yale; Omar Ashraf and Christopher Kim's Senior Project in 2018 came up with the idea of creating a computational intelligence for Catan independently of my research proposal, where they utilized deep Q-learning to effectively build an agent that could play Catan. A small number of other researchers outside of Yale have also made Catan agents, each with differing methods; Szita, Chaslot, and Spronck used MCTS when the algorithm was still relatively new (2010), Pfeiffer opted for a reinforcement learning-based approach (2004), and Guhe and Lascarides created a symbolic model with various heuristics to effectively improve an agent's prior distribution for analyzing game states and next moves.
-(2014).
-\\ \\ 
-\noindent Catan is an interesting case for this type of algorithm because very little is technically hidden from view of the players; all resource gathering is fully visible to everyone. In theory, a player (or computer) with a perfectly eidetic memory could keep track of every resource that players gather, with the only source of variability being which cards players randomly steal from each other upon activating the robber. While that source of variability necessitates a model that doesn't contain perfect information, and human players do not typically retain this level of information (except, perhaps, at the very highest levels of play) this is still a characteristic of note in the case of Catan.
+\noindent Methods that utilize an algorithmic method have become relatively commonplace. Pfeiffer opted for an approach that used hierarchical reinforcement learning to create an effective agent to play Catan, subdividing a strategy into individually-learned behaviors and then learning independent, high-level policies for those behaviors (2004). MCTS (Monte Carlo Tree Search) has also been used for the goal of agent creation, with Szita, Chaslot, and Spronck writing an MCTS agent that compared favorably against JSettlers; with 1000 games simulated, it performed about as well, while with 10000 games simulated, it performs significantly better than the JSettlers agent (2010).
 \\ \\
-\noindent In order to tread new ground concerning this particular game, I am proposing utilizing a version of MCTS called Information Set MCTS (ICMCTS) with Partially Observable Moves (POMs) first pioneered in the context of games by Cowling, Powley, and Whitehouse, and suited for use in stochastic games with imperfect information such as Catan (2012). ICMCTS differs from the standard well-trodden MCTS algorithms by dealing with information sets as the primary nodes in the minimax tree, which resolves many of the weaknesses of using a purely determinization-based approach. Regular MCTS will likely be used as a sort of benchmark, with ICMCTS being used as a comparison. 
-\\ \\
-\noindent As for how MCTS will be set up, I plan to utilize a series of meta-actions in order to guide the actions of my agents - instead of looking at specific actions (build a road here), I plan to instead set general guidelines for my agent (use roads to expand, focus on cities, get development cards, etc.) as the potential branches for my MCTS algorithm, which the agents will follow accordingly.
+\noindent Other researchers have also focused on Catan from heuristics-based standpoints, such as Guhe and Lascarides, which created an empirical framework for testing strategies in Catan, focusing mainly on planning and symbolic models with heuristic strategies. This work also made heavy usage of JSettlers, improving the JSettlers protocol and also creating new agents that focused on different aspects of the game, such as focusing on development cards (2014). Finally, researchers at Yale have also worked on Catan; Omar Ashraf and Christopher Kim's Senior Project in 2018 came up with the idea of creating a computational intelligence for Catan, where they utilized deep Q-learning to effectively build an agent that could play Catan and compared that Q-learning agent with heuristic agents that they had created (2018).
 
-\section{Deliverables}
-
+\section{Game Implementation}
+Before writing any agents or heuristics, the actual game of Catan must be built first. This implementation of Catan was built in Python with an OOP-based implementation, with a number of different components that, together, create a working Catan simulator. OOP was chosen to effectively compartmentalize the disparate parts of the Catan game, for ease of development. The main components are:
 \begin{itemize}
-	\item Settlers of Catan engine that can successfully simulate games of Catan.
-	\item Baseline agent that uses standard, determinized MCTS to play Catan.
-	\item Agent using ISMCTS to play Catan, to compare with above.
-	\item Final report.
+	\item Catan class, which handles all of the game logic (rolling dice, building settlements, calculating the longest army, etc.)
+	\item Position class, which represents a certain position in a Catan game.
+	\item Player class, owned by the Position, class, which represents a player's position in a Catan game (resources owned, size of army, etc.)
+	\item Board class and its components the Road, Colony, Hex, and Harbor classes, owned by the Position, which represents the board's position in a Catan game (board configuration, which roads, settlements, and cities have been built, placement of harbors, etc.)
+	\item Display class, which utilizes pygame to create a visual display of the Board and any changes.
+	\item Policy class, an abstract class outlining an agent to play Catan.
 \end{itemize}
-Note that all code is planned to be delivered to the CPSC 490 directory, unless directed otherwise.
 
-\section{Timeline}
+\noindent An example of a completed Catan game with the pygame visual aspect is shown below. (The red X denotes the hex where the robber is located, preventing resources from being generated from there.)
 
+\begin{figure}[!h]
+  \caption{A completed game of Catan.}
+  \begin{center}
+    \includegraphics[scale=.20]{catan}
+  \end{center}
+\end{figure}
+
+\section{Heuristics Discussion}
+Given the wide variety of work already available on Catan and board games of similar complexity, a focus on heuristic simplicity was decided on. If it is possible to create a simple, heuristics-based agent for Catan that performs at a high or at least a medium level, then it may be possible to reduce other games (or problems in general) to simplistic algorithms, providing good results when time is an extreme issue and the computational power to run a more complex algorithm such as Q-learning or MCTS does not exist or is prohibitively expensive.
+\\ \\
+\noindent Therefore, the decision was made to attempt to optimize a simplistic heuristic-based agent. As to what heuristics to implement and optimize for, a number of options present themselves, including but not limited to:
 \begin{itemize}
-	\item by Feb 14: Settlers of Catan engine complete.
-	\item by Mar 7: Baseline agent complete.
-	\item by Apr 21: ICMCTS agent complete.
-	\item by May 4: Final report complete.
+	\item What resources to prioritize for initial settlement placing, and how much to prioritize them over a lower-priority resource with a higher rate of generation
+	\item What resources to prioritize for later settlement placing, and how that should interact with the type and number of resources already being generated by the player
+	\item Infrastructural concerns - whether to prioritize upgrading settlements to cities or placing new settlements first
+	\item Where to place new roads, and whether to build new roads or prioritize other infrastructure, such as development cards.
+	\item What cards to discard when forced to discard by a robber attack.
+	\item When to trade your stored resources, and what to trade those resources for.
+	\item How much to prioritize harbors when placing new settlements.
+	\item Where to place the robber, when prompted to.
 \end{itemize}
+\noindent Given the number and complexity of the heuristics outlined above, a decision was made to port Ashraf and Kim's "smart heuristic agent" to my Catan implementation as a starting point, to which further improvements could be made. Then, a "builder" heuristic was created loosely based on the "smart heuristic player" and my own personal playstyle, which eschews building the longest road, development cards, or the largest army in favor of building up a large base of resource generation infrastructure (settlements and cities) and gaining the required 10 VPs from settlement and city building. 
+\\ \\
+\noindent An initial testing module was created to run the smart heuristic, the builder, and a random policy against each other to determine a winning heuristic that would serve as a starting point for further analysis. Various parameters of the winning heuristic was tweaked through the hill-climbing module that I created, in order to ascertain the existence of possible optimal hyperparameters. This then was compared to a random policy and the original policy in order to ascertain the quality of the heuristic.
+
+\section{Results}
+
+The results of the initial tests between the smart agent, the builder agent, and the random agent (tester.py) are shown below. These agents were tested 100,000 times in a 3-player game against each other with random player order.
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{results}
+  \captionof{figure}{Victories, by agent.}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{order}
+  \captionof{figure}{Victories, by player order.}
+  \label{fig:test2}
+\end{minipage}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Builder_score_Smart_vic}
+  \captionof{figure}{Builder agent score distribution \\ when Smart agent wins.}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Random_score_Smart_vic}
+  \captionof{figure}{Random agent score distribution \\ when Smart agent wins.}
+  \label{fig:test2}
+\end{minipage}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Smart_score_Random_vic}
+  \captionof{figure}{Smart agent score distribution \\ when Random agent wins.}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Builder_score_Random_vic}
+  \captionof{figure}{Builder agent score distribution \\ when Random agent wins.}
+  \label{fig:test2}
+\end{minipage}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Smart_score_Builder_vic}
+  \captionof{figure}{Smart agent score distribution \\ when Builder agent wins.}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Random_score_Builder_vic}
+  \captionof{figure}{Random agent score distribution \\ when Builder agent wins.}
+  \label{fig:test2}
+\end{minipage}
+\end{figure}
+
+\noindent The results here show the primacy of the smart agent, so this was the agent chosen for optimization. The agent was then put through a hill-climb module made to identify the most optimal combination of hyperparameters. The hill climb module (hillclimb.py) does this by choosing a random hyperparameter starting point between specified minimums and maximums for all hyperparameters. Then, the algorithm iterates. For each iteration, the algorithm finds all neighbors of the current best hyperparameter configuration, defined as every configuration where each parameter is 1, 0, or -1 steps away from the current configuration (step size defined as an input). Then, for each neighbor configuration that has not been viewed yet, the module plays 10,000 games with the neighbor configuration, the current best configuration, and the builder agent. Finally, the neighbor configuration with the best win rate is chosen as the new current best configuration. If no neighbor configuration has a win rate better than the current best configuration's win rate, the algorithm returns the current best configuration as its result.
+\\ \\
+\noindent This algorithm was run multiple times with different starting random points in order to determine if there truly was a best configuration, or if the configuration state space contained multiple local minima and maxima. The results of this show that...
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Smart_score_Builder_vic}
+  \captionof{figure}{Smart agent score distribution \\ when Builder agent wins.}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{Random_score_Builder_vic}
+  \captionof{figure}{Random agent score distribution \\ when Builder agent wins.}
+  \label{fig:test2}
+\end{minipage}
+\end{figure}
+
+\section{Discussion}
+
+Testing 100,000 Catan games with the unoptimized Smart, Builder, and Random agents in a scenario where all three of these agents faced off against each other in a three-person game of Catan showed that the Smart agent performed the greatest, implying that, for simple strategies, a balanced focus that incorporates development cards into a strategy will perform better than a strategy focused more on infrastructure and resource generation above all else. Something of note is that the graph showing the builder score on smart victory has a noticeable leftward skew, while the graph showing the smart score on builder victory has a more balanced skew, further cementing the high performance of the smart heuristic agent.
+\\ \\
+\noindent Of course, limiting the analysis exclusively to simplistic strategies revealed a number of noticeable weaknesses, implying the relative impossibility of reducing a game with relatively complex components, such as Catan, to an easily digestible strategy and distilling that to a heuristics-based agent. Many of the games for both builder and smart agents even show a large number of games with only 2 points, implying that the agents failed to gain any points at all during the entire game. This suggests both the need for improvements in initial settlement logic and the need for a more focused strategy; the agents may have oscillated between multiple aims (such as gathering resources for building a settlement and building a city) instead of trading and building towards one exclusively. 
+\\ \\
+\noindent Additionally, player order also was not very important when determining victory; as shown above, the first, second, and third players had around the same number of victories. Randomized player choice may have contributed to this, although not seeing a noticeable skew one way or the other is evidence for an order-agnostic analysis.
+\\ \\
+\noindent As for the results of the hill-climb algorithm...
+
+\section{Future Work}
+Future work in this endeavor would definitely involve as a first step the porting of the JSettlers algorithm to this Python implementation of Catan - this set of more robust and complex heuristics utilized in many other studies of Catan would be a good starting point for further examination of Catan and heuristic agents. From there, the hill-climb or a similar hyperparameter algorithm could be used to effectively optimize the JSettlers algorithm, providing a stronger starting point for further analysis of Catan.
+\\ \\
+\noindent As for non-heuristic agents, one possibility could be the implementation of MCTS (Monte Carlo Tree Search), perhaps with more modern advances or domain knowledge, such as the inclusion of meta-actions. New advances regarding the MCTS algorithm, such as IS-MCTS-POM, may also be used here. Outlined in Cowling, Powley, and Whitehouse, this algorithm uses information sets as the primary nodes in the minimax tree, allowing MCTS to effectively work with incomplete information, among other improvements (2012). Combining this idea with the meta-action concept, the information sets that IS-MCTS considers could be related to the opponent's ability to build something (like a city or road) rather than something simplistic, such as how many cards the opponent has, with the latter being used to derive the former. In any case, Settlers of Catan remains a very rich avenue for studying computer games and strategies to optimize them.
 
 \clearpage
 \bibliographystyle{plain}

@@ -26,15 +26,18 @@ class Tester:
     def __init__(self, names):
         self.names = names
 
+    def main(setup, num):
+        order, winners, two_winner, one_winner, zero_winner = self.test_setup(setup, num)
+        self.make_graphs(order, winners, two_winner, one_winner, zero_winner)
+
     def test_setup(self, setup, num):
         single = partial(one_test, setup)
 
         with Pool(8) as p:
             vals = p.map(single, range(num))
+        return self.parse_results(vals)
 
-        self.parse_results(vals)
-
-    def parse_results(self, vals):
+    def parse_results(self, vals, log=False):
         order = [0 for i in self.names]
         winners = {0: 0, 1: 0, 2: 0}
         zero_winner = {1: [], 2: []}
@@ -60,18 +63,18 @@ class Tester:
                         winners[2] += 1
                         two_winner[0].append(points[0][1])
                         two_winner[1].append(points[1][1])
-
-        print(winners)
-        print(f"{self.names[0]} Winner")
-        print(f"{self.names[1]}: mean {mean(zero_winner[1])} std {stdev(zero_winner[1])}")
-        print(f"{self.names[2]}: mean {mean(zero_winner[2])} std {stdev(zero_winner[2])}")
-        print(f"{self.names[1]} Winner")
-        print(f"{self.names[0]}: mean {mean(one_winner[0])} std {stdev(one_winner[0])}")
-        print(f"{self.names[2]}: mean {mean(one_winner[2])} std {stdev(one_winner[2])}")
-        print(f"{self.names[2]} Winner")
-        print(f"{self.names[0]}: mean {mean(two_winner[0])} std {stdev(two_winner[0])}")
-        print(f"{self.names[1]}: mean {mean(two_winner[1])} std {stdev(two_winner[1])}")
-        self.make_graphs(order, winners, two_winner, one_winner, zero_winner)
+        if log:
+            print(winners)
+            print(f"{self.names[0]} Winner")
+            print(f"{self.names[1]}: mean {mean(zero_winner[1])} std {stdev(zero_winner[1])}")
+            print(f"{self.names[2]}: mean {mean(zero_winner[2])} std {stdev(zero_winner[2])}")
+            print(f"{self.names[1]} Winner")
+            print(f"{self.names[0]}: mean {mean(one_winner[0])} std {stdev(one_winner[0])}")
+            print(f"{self.names[2]}: mean {mean(one_winner[2])} std {stdev(one_winner[2])}")
+            print(f"{self.names[2]} Winner")
+            print(f"{self.names[0]}: mean {mean(two_winner[0])} std {stdev(two_winner[0])}")
+            print(f"{self.names[1]}: mean {mean(two_winner[1])} std {stdev(two_winner[1])}")
+        return order, winners, two_winner, one_winner, zero_winner
 
     def make_graphs(self, order, winners, two_winner, one_winner, zero_winner):
         if not os.path.isdir("results"):
@@ -130,17 +133,18 @@ class Tester:
         plt.savefig("order")
         
 
-t = Tester(["Smart", "Builder", "Random"])
-setup_zero = {
-    "stone_importance": 3,
-    "extend_longest_weight": 1,
-    "tie_longest_weight": 1,
-    "knight_play_weight": .5
-}
-setup_one = {
+if __name__ == "__main__":
+    t = Tester(["Smart", "Builder", "Random"])
+    setup_zero = {
+        "stone_importance": 3,
+        "extend_longest_weight": 1,
+        "tie_longest_weight": 1,
+        "knight_play_weight": .5
+    }
+    setup_one = {
 
-}
-setup_two = {
+    }
+    setup_two = {
 
-}
-t.test_setup([["b", "h", "r"], [setup_zero, setup_one, setup_two]], 100000)
+    }
+    t.main([["b", "h", "r"], [setup_zero, setup_one, setup_two]], 100000)
