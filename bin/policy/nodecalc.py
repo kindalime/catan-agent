@@ -478,12 +478,14 @@ class NodeCalc:
                 nodes[child] = child_node
 
         # Dice = 7
-        self.other_player_discard(pos)
+        child = copy.deepcopy(pos)
+        self.other_player_discard(child)
         child_node = copy.copy(node)
-        if pos.players[self.id].resources.total() > 7:
+        print(child.players[self.id].resources.total())
+        if child.players[self.id].resources.total() > 7:
             child_node.state = State.OTHER_DISCARD
         else:
-            child_node = self.play_other_turn(child, node)
+            child_node = self.play_other_turn(child, child_node)
         child_node.dice = 7
         nodes[child] = child_node
 
@@ -501,17 +503,19 @@ class NodeCalc:
                     player.collect_resources(child, dice)
                 # set to dev
                 child_node = copy.copy(node)
-                child_node.state = BUILDING
+                child_node.state = State.BUILDING
                 child_node.dice = dice
                 nodes[child] = child_node
 
         # Dice = 7
-        self.other_player_discard(pos)
+        child = copy.deepcopy(pos)
+        self.other_player_discard(child)
         child_node = copy.copy(node)
-        if pos.players[self.id].resources.total() > 7:
+        print(child.players[self.id].resources.total())
+        if child.players[self.id].resources.total() > 7:
             child_node.state = State.MY_DISCARD
         else:
-            child_node = self.play_other_turn(child, node)
+            child_node.state = State.BUILDING
         child_node.dice = 7
         nodes[child] = child_node
 

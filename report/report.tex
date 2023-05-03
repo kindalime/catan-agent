@@ -24,9 +24,7 @@
 \maketitle
 
 \section{Abstract}
-This paper attempts to optimize a set of simplistic heuristics for the board game Settlers of Catan, in an attempt to create an agent that distills the complexity of a 
-
-the work done here provides a framework for future explorations of heuristic-based algorithms for computer games.
+This paper attempts to optimize a set of simplistic heuristics for the board game Settlers of Catan, in an attempt to create an agent that distills the complexity of a board game with as many moving parts as Catan into a couple of simple heuristics. First, a complete working implementation of the board game was created in Python, including a visual component that was created in pygame and random and human agents. After comparing the efficacy of an agent that focuses primarily on resource generation versus an implementation of another project's agent, which takes a more holistic approach to the game, tests showed that the more interconnected and overarching agent performed better compared to the “builder” agent and a random agent. Statistics were also tabulated on the player order and how much that affected victory percentages across games; results showed that this difference was extremely minor at most. Once this was settled, an optimization schema was created based on the hill-climb algorithm and was tested on the agent in order to find a possible singular set of optimal hyperparameters for the agent. The results of this were inconclusive, resulting in different results based on the starting point for the algorithm, implying that something more complex, such as a genetic algorithm, may be required. Although the agent showed some weaknesses, the work done here provides a framework for future explorations of simplistic heuristic-based algorithms for computer games, helping improve the state of AI as a whole.
 
 \section{Game Description}
 
@@ -70,7 +68,9 @@ Before writing any agents or heuristics, the actual game of Catan must be built 
 
 \noindent An example of a completed Catan game with the pygame visual aspect is shown below. (The red X denotes the hex where the robber is located, preventing resources from being generated from there.)
 
-\begin{figure}[!h]
+\clearpage
+
+\begin{figure}
   \caption{A completed game of Catan.}
   \begin{center}
     \includegraphics[scale=.20]{catan}
@@ -98,6 +98,8 @@ Given the wide variety of work already available on Catan and board games of sim
 \section{Results}
 
 The results of the initial tests between the smart agent, the builder agent, and the random agent (tester.py) are shown below. These agents were tested 100,000 times in a 3-player game against each other with random player order.
+
+\clearpage
 
 \begin{figure}
 \centering
@@ -163,25 +165,13 @@ The results of the initial tests between the smart agent, the builder agent, and
 \end{minipage}
 \end{figure}
 
-\noindent The results here show the primacy of the smart agent, so this was the agent chosen for optimization. The agent was then put through a hill-climb module made to identify the most optimal combination of hyperparameters. The hill climb module (hillclimb.py) does this by choosing a random hyperparameter starting point between specified minimums and maximums for all hyperparameters. Then, the algorithm iterates. For each iteration, the algorithm finds all neighbors of the current best hyperparameter configuration, defined as every configuration where each parameter is 1, 0, or -1 steps away from the current configuration (step size defined as an input). Then, for each neighbor configuration that has not been viewed yet, the module plays 10,000 games with the neighbor configuration, the current best configuration, and the builder agent. Finally, the neighbor configuration with the best win rate is chosen as the new current best configuration. If no neighbor configuration has a win rate better than the current best configuration's win rate, the algorithm returns the current best configuration as its result.
-\\ \\
-\noindent This algorithm was run multiple times with different starting random points in order to determine if there truly was a best configuration, or if the configuration state space contained multiple local minima and maxima. The results of this show that...
+\clearpage
 
-\begin{figure}
-\centering
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{Smart_score_Builder_vic}
-  \captionof{figure}{Smart agent score distribution \\ when Builder agent wins.}
-  \label{fig:test1}
-\end{minipage}%
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=1\linewidth]{Random_score_Builder_vic}
-  \captionof{figure}{Random agent score distribution \\ when Builder agent wins.}
-  \label{fig:test2}
-\end{minipage}
-\end{figure}
+\noindent The results here show the primacy of the smart agent, so this was the agent chosen for optimization. The agent was then put through a hill-climb module made to identify the most optimal combination of hyperparameters. The hill climb module (hillclimb.py) does this by choosing a random hyperparameter starting point between specified minimums and maximums for all hyperparameters. Then, the algorithm iterates. For each iteration, the algorithm finds all neighbors of the current best hyperparameter configuration, defined as every configuration where each parameter is 1, 0, or -1 steps away from the current configuration (step size defined as an input). Note that the hill climb algorithm includes functionality for halving the step size if the algorithm does not show a preset level of improvement.
+\\ \\
+\noindent Then, for each neighbor configuration that has not been viewed yet, the module plays 1,000 games with the neighbor configuration, the initial configuration, and the builder agent. Finally, the neighbor configuration with the best win rate is chosen as the new current best configuration. If no neighbor configuration has a win rate better than the current best configuration's win rate, the algorithm returns the current best configuration as its result.
+\\ \\
+\noindent This algorithm was run multiple times with different starting random points in order to determine if there truly was a best configuration, or if the configuration state space contained multiple local minima and maxima. However, the algorithm proved to be inconclusive, as the results varied widely based on random hyperparameter starting point.
 
 \section{Discussion}
 
@@ -191,7 +181,7 @@ Testing 100,000 Catan games with the unoptimized Smart, Builder, and Random agen
 \\ \\
 \noindent Additionally, player order also was not very important when determining victory; as shown above, the first, second, and third players had around the same number of victories. Randomized player choice may have contributed to this, although not seeing a noticeable skew one way or the other is evidence for an order-agnostic analysis.
 \\ \\
-\noindent As for the results of the hill-climb algorithm...
+\noindent As for the results of the hill-climb algorithm, the inconclusive result of the algorithm implies that something simplistic, such as hill-climb, may not be adequate for finding the correct set of hyperparameters for the agent. More complex algorithms, such as a genetic algorithm, may be necessary to handle this optimization problem.
 
 \section{Future Work}
 Future work in this endeavor would definitely involve as a first step the porting of the JSettlers algorithm to this Python implementation of Catan - this set of more robust and complex heuristics utilized in many other studies of Catan would be a good starting point for further examination of Catan and heuristic agents. From there, the hill-climb or a similar hyperparameter algorithm could be used to effectively optimize the JSettlers algorithm, providing a stronger starting point for further analysis of Catan.

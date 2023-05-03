@@ -163,6 +163,7 @@ class MonteCarlo:
 
         ucbs = [self.calculate_ucb(child, state) for child in children]
         choices = [idx for idx, value in enumerate(ucbs) if value == max(ucbs)]
+        print(ucbs, choices)
         return children[random.choice(choices)]
 
     def calculate_ucb(self, state, parent_state):
